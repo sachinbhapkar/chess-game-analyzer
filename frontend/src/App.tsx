@@ -161,11 +161,11 @@ export function App() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
-                onClick={() => handlePlayerSearch('sachinbhapkar')}
+                onClick={() => handlePlayerSearch('sachin-bhapkar')}
                 className="chess-btn-green w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow"
               >
                 <Sparkles size={14} />
-                <span>Try user: sachinbhapkar</span>
+                <span>Try user: sachin-bhapkar</span>
               </button>
 
               <button

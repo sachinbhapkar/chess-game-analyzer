@@ -11,7 +11,7 @@ interface PlayerSearchProps {
 }
 
 const LOCAL_TOP_PLAYERS: PlayerSuggestion[] = [
-  { username: 'sachinbhapkar', name: 'Sachin Bhapkar', title: undefined, rating: 1052, avatar: 'https://images.chesscomfiles.com/uploads/v1/user/345019035.53895966.200x200o.9d5c4d8fe426.png' },
+  { username: 'sachin-bhapkar', name: 'Sachin Bhapkar', title: undefined, rating: 1885, avatar: 'https://images.chesscomfiles.com/uploads/v1/user/594034692.fc3896a7.200x200o.0c9da0736c17.jpg' },
   { username: 'hikaru', name: 'Hikaru Nakamura', title: 'GM', rating: 3441, avatar: 'https://images.chesscomfiles.com/uploads/v1/user/15448422.88c010c1.200x200o.3c5619f5441e.png' },
   { username: 'magnuscarlsen', name: 'Magnus Carlsen', title: 'GM', rating: 3394, avatar: 'https://images.chesscomfiles.com/uploads/v1/user/3889224.121e2094.200x200o.361c2f8a59c2.jpg' },
   { username: 'danielnaroditsky', name: 'Daniel Naroditsky', title: 'GM', rating: 3150 },
@@ -170,7 +170,7 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search Chess.com user (e.g. sachinbhapkar)..."
+                placeholder="Search Chess.com user (e.g. sachin-bhapkar)..."
                 value={inputVal}
                 onChange={(e) => {
                   setInputVal(e.target.value);

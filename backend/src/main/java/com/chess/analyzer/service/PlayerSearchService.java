@@ -49,7 +49,7 @@ public class PlayerSearchService {
     @PostConstruct
     public void initDirectory() {
         // Current user & world-class grandmasters, champions, and popular creators
-        addSeed("sachinbhapkar", "Sachin Bhapkar", null, "https://images.chesscomfiles.com/uploads/v1/user/345019035.53895966.200x200o.9d5c4d8fe426.png", 1052);
+        addSeed("sachin-bhapkar", "Sachin Bhapkar", null, "https://images.chesscomfiles.com/uploads/v1/user/594034692.fc3896a7.200x200o.0c9da0736c17.jpg", 1885);
         addSeed("magnuscarlsen", "Magnus Carlsen", "GM", "https://images.chesscomfiles.com/uploads/v1/user/3889224.121e2094.200x200o.361c2f8a59c2.jpg", 3394);
         addSeed("hikaru", "Hikaru Nakamura", "GM", "https://images.chesscomfiles.com/uploads/v1/user/15448422.88c010c1.200x200o.3c5619f5441e.png", 3443);
         addSeed("danielnaroditsky", "Daniel Naroditsky", "GM", null, 3150);
