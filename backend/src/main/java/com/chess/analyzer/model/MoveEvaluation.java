@@ -15,6 +15,11 @@ public class MoveEvaluation {
     private String playerColor; // "white" or "black"
     private String san;
     private String uci;
+    private String fromSquare;
+    private String toSquare;
+    private boolean isCheck;
+    private boolean isCapture;
+
     private String fenBefore;
     private String fenAfter;
 

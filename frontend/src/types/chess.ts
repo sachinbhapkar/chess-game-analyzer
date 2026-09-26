@@ -1,11 +1,15 @@
 export type MoveJudgment =
+  | 'BRILLIANT'
+  | 'GREAT'
   | 'BEST'
   | 'EXCELLENT'
   | 'GOOD'
+  | 'BOOK'
+  | 'FORCED'
   | 'INACCURACY'
   | 'MISTAKE'
-  | 'BLUNDER'
-  | 'BOOK';
+  | 'MISSED_WIN'
+  | 'BLUNDER';
 
 export interface MoveEvaluation {
   ply: number;
@@ -13,6 +17,10 @@ export interface MoveEvaluation {
   playerColor: 'white' | 'black';
   san: string;
   uci: string;
+  fromSquare?: string;
+  toSquare?: string;
+  isCheck?: boolean;
+  isCapture?: boolean;
   fenBefore: string;
   fenAfter: string;
   evalScore: number | null;
@@ -43,18 +51,31 @@ export interface GameAnalysisReport {
   blackRating?: number;
   whiteAccuracy: number;
   blackAccuracy: number;
-  whiteBlunders: number;
-  blackBlunders: number;
-  whiteMistakes: number;
-  blackMistakes: number;
-  whiteInaccuracies: number;
-  blackInaccuracies: number;
-  whiteGoodMoves: number;
-  blackGoodMoves: number;
+
+  // Complete breakdown
+  whiteBrilliantMoves: number;
+  blackBrilliantMoves: number;
+  whiteGreatMoves: number;
+  blackGreatMoves: number;
   whiteBestMoves: number;
   blackBestMoves: number;
+  whiteExcellentMoves: number;
+  blackExcellentMoves: number;
+  whiteGoodMoves: number;
+  blackGoodMoves: number;
   whiteBookMoves: number;
   blackBookMoves: number;
+  whiteForcedMoves: number;
+  blackForcedMoves: number;
+  whiteInaccuracies: number;
+  blackInaccuracies: number;
+  whiteMistakes: number;
+  blackMistakes: number;
+  whiteMissedWins: number;
+  blackMissedWins: number;
+  whiteBlunders: number;
+  blackBlunders: number;
+
   whiteAcpl: number;
   blackAcpl: number;
   moves: MoveEvaluation[];
@@ -85,6 +106,14 @@ export interface PlayerProfile {
       record?: { win: number; loss: number; draw: number };
     };
   };
+}
+
+export interface PlayerSuggestion {
+  username: string;
+  name?: string;
+  title?: string;
+  avatar?: string;
+  rating?: number;
 }
 
 export interface GameSummary {

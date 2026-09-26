@@ -4,13 +4,17 @@ import lombok.Getter;
 
 @Getter
 public enum MoveJudgment {
-    BEST("Best", "#10b981", "★"),
-    EXCELLENT("Excellent", "#3b82f6", "✓"),
-    GOOD("Good", "#8b5cf6", "○"),
-    INACCURACY("Inaccuracy", "#f59e0b", "?!"),
-    MISTAKE("Mistake", "#f97316", "?"),
-    BLUNDER("Blunder", "#ef4444", "??"),
-    BOOK("Book", "#6366f1", "📖");
+    BRILLIANT("Brilliant", "#26c2a3", "!!"),
+    GREAT("Great Move", "#5c8bb0", "!"),
+    BEST("Best", "#81b64c", "★"),
+    EXCELLENT("Excellent", "#96bc4b", "✓"),
+    GOOD("Good", "#a3b18a", "○"),
+    BOOK("Book", "#a88865", "📖"),
+    FORCED("Forced", "#8c949e", "□"),
+    INACCURACY("Inaccuracy", "#f0c15c", "?!"),
+    MISTAKE("Mistake", "#e58f2a", "?"),
+    MISSED_WIN("Missed Win", "#db4373", "✕"),
+    BLUNDER("Blunder", "#ca3431", "??");
 
     private final String label;
     private final String color;
