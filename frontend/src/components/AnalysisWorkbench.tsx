@@ -28,6 +28,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report }) 
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const activeMoveRef = useRef<HTMLDivElement | null>(null);
+  const notationContainerRef = useRef<HTMLDivElement | null>(null);
 
   const totalMoves = report.moves.length;
   const currentMove: MoveEvaluation | null =
@@ -56,6 +57,19 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report }) 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input or textarea
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+
       if (e.key === 'ArrowRight') {
         goToNext();
       } else if (e.key === 'ArrowLeft') {
@@ -65,7 +79,6 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report }) 
       } else if (e.key === 'ArrowDown') {
         goToEnd();
       } else if (e.key === ' ') {
-        e.preventDefault();
         setIsPlaying((p) => !p);
       }
     };
@@ -73,10 +86,35 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report }) 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentPlyIndex, totalMoves]);
 
-  // Auto scroll active move in notation sheet
+  // Auto scroll active move strictly inside notation sheet (prevents entire window/page jumping)
   useEffect(() => {
-    if (activeMoveRef.current) {
-      activeMoveRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const container = notationContainerRef.current;
+    if (!container) return;
+
+    if (currentPlyIndex === -1) {
+      container.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const element = activeMoveRef.current;
+    if (element) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+
+      // If the active move is above the visible container area
+      if (elementRect.top < containerRect.top) {
+        container.scrollBy({
+          top: elementRect.top - containerRect.top - 8,
+          behavior: 'smooth',
+        });
+      }
+      // If the active move is below the visible container area
+      else if (elementRect.bottom > containerRect.bottom) {
+        container.scrollBy({
+          top: elementRect.bottom - containerRect.bottom + 8,
+          behavior: 'smooth',
+        });
+      }
     }
   }, [currentPlyIndex]);
 
@@ -675,7 +713,10 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report }) 
               <span className="text-[11px] text-[#8b8987]">Click move to jump</span>
             </div>
 
-            <div className="overflow-y-auto flex-1 pr-1 space-y-1 font-mono text-xs">
+            <div
+              ref={notationContainerRef}
+              className="overflow-y-auto flex-1 pr-1 space-y-1 font-mono text-xs"
+            >
               {Array.from({ length: Math.ceil(totalMoves / 2) }).map((_, moveIdx) => {
                 const whitePly = moveIdx * 2;
                 const blackPly = moveIdx * 2 + 1;
