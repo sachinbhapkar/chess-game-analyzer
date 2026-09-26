@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { PlayerSearch } from './components/PlayerSearch';
 import { GameList } from './components/GameList';
@@ -7,7 +7,7 @@ import { PgnModal } from './components/PgnModal';
 import { ChessKing, ChessKnight } from './components/ChessIcons';
 import type { GameAnalysisReport, GameSummary, PlayerProfile } from './types/chess';
 import { analyzeGamePgn, checkBackendHealth, fetchPlayerProfile, fetchRecentGames } from './services/api';
-import { AlertCircle, Sparkles } from 'lucide-react';
+import { AlertCircle, Sparkles, Loader2 } from 'lucide-react';
 
 export function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
@@ -19,6 +19,8 @@ export function App() {
   const [stockfishReady, setStockfishReady] = useState(false);
   const [isPgnModalOpen, setIsPgnModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const workbenchRef = useRef<HTMLDivElement>(null);
 
   // Check backend & Stockfish health on mount
   useEffect(() => {
@@ -58,13 +60,16 @@ export function App() {
       return;
     }
 
-    setAnalyzingGameId(game.id);
+    setAnalyzingGameId(game.id || 'current');
     setErrorMessage(null);
 
     try {
-      const report = await analyzeGamePgn(game.pgn, 12, 140);
+      // Depth 10 with 0ms artificial sleep = 0.5-1.5s total time for 60-move game!
+      const report = await analyzeGamePgn(game.pgn, 10, 0);
       setCurrentReport(report);
-      window.scrollTo({ top: 380, behavior: 'smooth' });
+      setTimeout(() => {
+        workbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err: any) {
       setErrorMessage(err.message || 'Analysis failed. Check if Stockfish backend is running.');
     } finally {
@@ -78,10 +83,12 @@ export function App() {
     setErrorMessage(null);
 
     try {
-      const report = await analyzeGamePgn(pgn, 12, 140);
+      const report = await analyzeGamePgn(pgn, 10, 0);
       setCurrentReport(report);
       setIsPgnModalOpen(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        workbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err: any) {
       setErrorMessage(err.message || 'Analysis failed for custom PGN.');
     } finally {
@@ -122,7 +129,7 @@ export function App() {
 
         {/* Game Analysis Workbench if a game has been analyzed */}
         {currentReport && (
-          <div className="mb-8 animate-in fade-in duration-200">
+          <div ref={workbenchRef} className="mb-8 animate-in fade-in duration-200 scroll-mt-20">
             <AnalysisWorkbench report={currentReport} />
           </div>
         )}
@@ -172,6 +179,24 @@ export function App() {
           </div>
         )}
       </main>
+
+      {/* Loading Evaluation Modal Overlay */}
+      {analyzingGameId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-[#262421] border border-[#3d3b38] rounded-2xl p-7 max-w-sm w-full text-center shadow-2xl flex flex-col items-center">
+            <div className="w-14 h-14 rounded-2xl bg-[#81b64c]/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c] mb-4">
+              <Loader2 size={30} className="animate-spin text-[#81b64c]" />
+            </div>
+            <h3 className="text-base font-bold text-white mb-1">Running Game Review</h3>
+            <p className="text-xs text-[#a09e9a] mb-5 leading-relaxed">
+              Stockfish 19 is evaluating all moves, finding blunders, and computing accuracy...
+            </p>
+            <div className="w-full bg-[#1e1c19] h-2 rounded-full overflow-hidden border border-[#3d3b38]">
+              <div className="h-full bg-[#81b64c] rounded-full animate-pulse w-full" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom PGN Modal */}
       <PgnModal

@@ -32,8 +32,8 @@ export async function fetchRecentGames(username: string, limit = 15): Promise<Ga
 
 export async function analyzeGamePgn(
   pgn: string,
-  depth = 12,
-  movetimeMs = 150
+  depth = 10,
+  movetimeMs = 0
 ): Promise<GameAnalysisReport> {
   const res = await fetch(`${API_BASE}/analysis/pgn`, {
     method: 'POST',

@@ -131,10 +131,11 @@ public class StockfishService {
         public EvaluationResult evaluateFen(String fen, int depth, int movetimeMs) {
             try {
                 sendCommand("position fen " + fen);
+                int targetDepth = depth > 0 ? depth : defaultDepth;
                 if (movetimeMs > 0) {
-                    sendCommand("go movetime " + movetimeMs);
+                    sendCommand("go depth " + targetDepth + " movetime " + movetimeMs);
                 } else {
-                    sendCommand("go depth " + depth);
+                    sendCommand("go depth " + targetDepth);
                 }
 
                 Integer lastCp = null;
