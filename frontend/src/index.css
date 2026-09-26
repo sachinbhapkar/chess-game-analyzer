@@ -2,23 +2,59 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-white min-h-screen;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #302e2b;
+    color: #e2e1e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
   }
 }
 
-/* Custom scrollbars */
+/* Custom Chess.com scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #21201d;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #454340;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #5c5955;
+}
+
+/* Tactile 3D button utility in Chess.com style */
+.chess-btn-green {
+  background-color: #81b64c;
+  border-bottom: 3px solid #537a28;
+  color: #ffffff;
+  font-weight: 700;
+  transition: all 0.1s ease;
+}
+.chess-btn-green:hover:not(:disabled) {
+  background-color: #96bc4b;
+}
+.chess-btn-green:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+}
+
+.chess-btn-secondary {
+  background-color: #3d3b38;
+  border-bottom: 3px solid #2b2926;
+  color: #c3c2c1;
+  font-weight: 600;
+  transition: all 0.1s ease;
+}
+.chess-btn-secondary:hover:not(:disabled) {
+  background-color: #4a4744;
+  color: #ffffff;
+}
+.chess-btn-secondary:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
 }

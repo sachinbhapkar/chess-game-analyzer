@@ -1,5 +1,6 @@
 package com.chess.analyzer.service;
 
+import com.chess.analyzer.model.PlayerProfile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -8,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -38,10 +40,16 @@ public class PlayerSearchService {
     private final Map<String, PlayerSuggestion> playerDirectory = new ConcurrentHashMap<>();
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ChessComService chessComService;
+
+    public PlayerSearchService(@Lazy ChessComService chessComService) {
+        this.chessComService = chessComService;
+    }
 
     @PostConstruct
     public void initDirectory() {
-        // Seed curated world-class grandmasters, champions, and popular creators
+        // Current user & world-class grandmasters, champions, and popular creators
+        addSeed("sachinbhapkar", "Sachin Bhapkar", null, "https://images.chesscomfiles.com/uploads/v1/user/345019035.53895966.200x200o.9d5c4d8fe426.png", 1052);
         addSeed("magnuscarlsen", "Magnus Carlsen", "GM", "https://images.chesscomfiles.com/uploads/v1/user/3889224.121e2094.200x200o.361c2f8a59c2.jpg", 3394);
         addSeed("hikaru", "Hikaru Nakamura", "GM", "https://images.chesscomfiles.com/uploads/v1/user/15448422.88c010c1.200x200o.3c5619f5441e.png", 3443);
         addSeed("danielnaroditsky", "Daniel Naroditsky", "GM", null, 3150);
@@ -68,9 +76,13 @@ public class PlayerSearchService {
         addSeed("imrosen", "Eric Rosen", "IM", null, 2550);
         addSeed("gothamchess", "Levy Rozman", "IM", null, 2400);
         addSeed("alexandrabotez", "Alexandra Botez", "WFM", null, 2050);
-        addSeed("itsandreabotez", "Andrea Botez", "", null, 1850);
+        addSeed("itsandreabotez", "Andrea Botez", null, null, 1850);
         addSeed("annacramling", "Anna Cramling", "WFM", null, 2100);
         addSeed("akanemsko", "Nemo Zhou", "WGM", null, 2300);
+        addSeed("tyler1", "Tyler Steinkamp", null, null, 1980);
+        addSeed("sadhwani_raunak", "Raunak Sadhwani", "GM", null, 3015);
+        addSeed("firouzja2003", "Alireza Firouzja", "GM", null, 3350);
+        addSeed("samshankland", "Sam Shankland", "GM", null, 2920);
 
         // Fetch Chess.com leaderboard asynchronously to augment directory
         Thread.ofVirtual().start(this::loadChessComLeaderboard);
@@ -133,7 +145,6 @@ public class PlayerSearchService {
 
     public List<PlayerSuggestion> searchSuggestions(String query, int limit) {
         if (query == null || query.trim().isEmpty()) {
-            // Return top seeded players
             return playerDirectory.values().stream()
                     .sorted((a, b) -> Integer.compare(b.getRating() != null ? b.getRating() : 0, a.getRating() != null ? a.getRating() : 0))
                     .limit(limit)
@@ -142,21 +153,65 @@ public class PlayerSearchService {
 
         String q = query.toLowerCase().trim();
 
-        return playerDirectory.values().stream()
+        // 1. Find existing matches in directory
+        List<PlayerSuggestion> matches = playerDirectory.values().stream()
                 .filter(p -> p.getUsername().toLowerCase().contains(q) || (p.getName() != null && p.getName().toLowerCase().contains(q)))
                 .sorted((a, b) -> {
-                    // Prefix matches first
                     boolean aStarts = a.getUsername().toLowerCase().startsWith(q);
                     boolean bStarts = b.getUsername().toLowerCase().startsWith(q);
                     if (aStarts && !bStarts) return -1;
                     if (!aStarts && bStarts) return 1;
-                    // Then by rating
                     int rateA = a.getRating() != null ? a.getRating() : 0;
                     int rateB = b.getRating() != null ? b.getRating() : 0;
                     return Integer.compare(rateB, rateA);
                 })
                 .limit(limit)
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        // 2. If no exact match or list has space, and query looks like a valid username, query Chess.com API live!
+        boolean hasExactMatch = matches.stream().anyMatch(p -> p.getUsername().equalsIgnoreCase(q));
+        if (!hasExactMatch && q.length() >= 3 && q.matches("^[a-zA-Z0-9_-]+$")) {
+            try {
+                PlayerProfile profile = chessComService.getPlayerProfile(q);
+                if (profile != null && profile.getUsername() != null) {
+                    Integer rating = extractRatingFromStats(profile);
+                    PlayerSuggestion liveSuggestion = PlayerSuggestion.builder()
+                            .username(profile.getUsername())
+                            .name(profile.getName())
+                            .title(profile.getTitle())
+                            .avatar(profile.getAvatar())
+                            .rating(rating)
+                            .build();
+
+                    playerDirectory.put(profile.getUsername().toLowerCase(), liveSuggestion);
+                    matches.add(0, liveSuggestion);
+                }
+            } catch (Exception ignored) {
+                // Not found or rate limited, gracefully continue
+            }
+        }
+
+        return matches.stream().limit(limit).collect(Collectors.toList());
+    }
+
+    private Integer extractRatingFromStats(PlayerProfile profile) {
+        if (profile.getStats() == null) return null;
+        try {
+            Map<String, Object> stats = profile.getStats();
+            String[] formats = {"chess_rapid", "chess_blitz", "chess_bullet"};
+            for (String f : formats) {
+                if (stats.get(f) instanceof Map<?, ?> map) {
+                    if (map.get("last") instanceof Map<?, ?> lastMap) {
+                        Object r = lastMap.get("rating");
+                        if (r instanceof Number num) {
+                            return num.intValue();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     public void registerUser(String username, String name, String title, String avatar) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Clock, Zap, Shield, History, X, ChevronRight } from 'lucide-react';
-import { ChessKing, ChessKnight } from './ChessIcons';
+import { Search, Clock, Zap, Shield, History, X, ChevronRight, Loader2 } from 'lucide-react';
+import { ChessPawn } from './ChessIcons';
 import type { PlayerProfile, PlayerSuggestion } from '../types/chess';
 import { fetchPlayerSuggestions } from '../services/api';
 
@@ -10,20 +10,24 @@ interface PlayerSearchProps {
   loading: boolean;
 }
 
-const FEATURED_PLAYERS = [
-  { username: 'hikaru', name: 'Hikaru Nakamura', title: 'GM' },
-  { username: 'magnuscarlsen', name: 'Magnus Carlsen', title: 'GM' },
-  { username: 'danielnaroditsky', name: 'Daniel Naroditsky', title: 'GM' },
-  { username: 'nihalsarin', name: 'Nihal Sarin', title: 'GM' },
-  { username: 'gukeshd', name: 'Gukesh D', title: 'GM' },
-  { username: 'rpragchess', name: 'Praggnanandhaa', title: 'GM' },
+const LOCAL_TOP_PLAYERS: PlayerSuggestion[] = [
+  { username: 'sachinbhapkar', name: 'Sachin Bhapkar', title: undefined, rating: 1052, avatar: 'https://images.chesscomfiles.com/uploads/v1/user/345019035.53895966.200x200o.9d5c4d8fe426.png' },
+  { username: 'hikaru', name: 'Hikaru Nakamura', title: 'GM', rating: 3441, avatar: 'https://images.chesscomfiles.com/uploads/v1/user/15448422.88c010c1.200x200o.3c5619f5441e.png' },
+  { username: 'magnuscarlsen', name: 'Magnus Carlsen', title: 'GM', rating: 3394, avatar: 'https://images.chesscomfiles.com/uploads/v1/user/3889224.121e2094.200x200o.361c2f8a59c2.jpg' },
+  { username: 'danielnaroditsky', name: 'Daniel Naroditsky', title: 'GM', rating: 3150 },
+  { username: 'nihalsarin', name: 'Nihal Sarin', title: 'GM', rating: 3319 },
+  { username: 'gukeshd', name: 'Gukesh D', title: 'GM', rating: 3050 },
+  { username: 'rpragchess', name: 'Praggnanandhaa', title: 'GM', rating: 3080 },
+  { username: 'fabianocaruana', name: 'Fabiano Caruana', title: 'GM', rating: 3200 },
+  { username: 'gothamchess', name: 'Levy Rozman', title: 'IM', rating: 2400 },
 ];
 
 export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, loading }) => {
   const [inputVal, setInputVal] = useState('');
-  const [suggestions, setSuggestions] = useState<PlayerSuggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<PlayerSuggestion[]>(LOCAL_TOP_PLAYERS);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [isFetching, setIsFetching] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,17 +55,40 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
     }
   };
 
-  // Debounced autocomplete suggestions lookup
+  // Immediate local filter + debounced remote API lookup
   useEffect(() => {
-    if (!inputVal.trim()) {
-      setSuggestions([]);
+    const q = inputVal.toLowerCase().trim();
+
+    if (!q) {
+      setSuggestions(LOCAL_TOP_PLAYERS);
+      setIsFetching(false);
       return;
     }
 
+    // Instant local matches first
+    const instantLocal = LOCAL_TOP_PLAYERS.filter(
+      (p) => p.username.toLowerCase().includes(q) || (p.name && p.name.toLowerCase().includes(q))
+    );
+    if (instantLocal.length > 0) {
+      setSuggestions(instantLocal);
+    }
+
+    // Debounced remote lookup
+    setIsFetching(true);
     const timer = setTimeout(async () => {
-      const results = await fetchPlayerSuggestions(inputVal, 7);
-      setSuggestions(results);
-    }, 180);
+      try {
+        const results = await fetchPlayerSuggestions(q, 8);
+        if (results && results.length > 0) {
+          setSuggestions(results);
+        } else if (instantLocal.length === 0) {
+          setSuggestions([]);
+        }
+      } catch {
+        // keep local
+      } finally {
+        setIsFetching(false);
+      }
+    }, 120);
 
     return () => clearTimeout(timer);
   }, [inputVal]);
@@ -96,7 +123,12 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions) return;
+    if (!showSuggestions) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        setShowSuggestions(true);
+      }
+      return;
+    }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -114,29 +146,31 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
   const bulletRating = profile?.stats?.chess_bullet?.last?.rating;
 
   return (
-    <div className="bg-[#15171f] border border-white/[0.08] rounded-2xl p-6 shadow-2xl mb-8 relative">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-5">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <ChessKnight size={18} />
-            </div>
-            <span>Player Match Archive</span>
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Search any registered chess player to evaluate recent games & blunder statistics
-          </p>
+    <div className="bg-[#262421] border border-[#3d3b38] rounded-xl p-5 shadow-xl mb-6 relative">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-[#81b64c]/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c]">
+            <ChessPawn size={22} />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              Player Game Review
+            </h2>
+            <p className="text-xs text-[#a09e9a]">
+              Type any player username to evaluate games and accuracy stats
+            </p>
+          </div>
         </div>
 
         {/* Search input with autocomplete dropdown */}
         <div ref={dropdownRef} className="relative w-full md:w-96">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[#8b8987] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Type username (e.g. hikaru)..."
+                placeholder="Search Chess.com user (e.g. sachinbhapkar)..."
                 value={inputVal}
                 onChange={(e) => {
                   setInputVal(e.target.value);
@@ -146,46 +180,52 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
                 onFocus={() => setShowSuggestions(true)}
                 onKeyDown={handleKeyDown}
                 autoComplete="off"
-                className="w-full bg-[#0d0e12] border border-white/10 rounded-xl pl-9 pr-8 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-inner font-sans"
+                className="w-full bg-[#1e1c19] border border-[#3d3b38] rounded-lg pl-9 pr-8 py-2 text-sm text-white placeholder-[#8b8987] focus:outline-none focus:border-[#81b64c] transition shadow-inner font-sans"
               />
-              {inputVal && (
+              {isFetching ? (
+                <Loader2 className="w-3.5 h-3.5 text-[#81b64c] animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+              ) : inputVal ? (
                 <button
                   type="button"
                   onClick={() => {
                     setInputVal('');
                     inputRef.current?.focus();
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b8987] hover:text-white cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
-              )}
+              ) : null}
             </div>
 
             <button
               type="submit"
               disabled={loading || !inputVal.trim()}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 text-white font-semibold text-xs transition shadow-lg shadow-emerald-950/40 cursor-pointer whitespace-nowrap"
+              className="chess-btn-green px-4 py-2 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-50 whitespace-nowrap"
             >
-              {loading ? 'Loading...' : 'Review'}
+              {loading ? 'Reviewing...' : 'Review'}
             </button>
           </form>
 
-          {/* Autocomplete Dropdown */}
+          {/* Autocomplete Suggestions Dropdown */}
           {showSuggestions && (
-            <div className="absolute left-0 right-0 mt-2 bg-[#12141a] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-white/[0.06] backdrop-blur-xl animate-in fade-in duration-150">
+            <div className="absolute left-0 right-0 mt-1.5 bg-[#21201d] border border-[#3d3b38] rounded-lg shadow-2xl z-50 overflow-hidden divide-y divide-[#2d2b28] max-h-80 overflow-y-auto">
               {suggestions.length > 0 ? (
                 <div>
-                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white/[0.02]">
-                    Matching Players
+                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-[#8b8987] uppercase tracking-wider bg-[#1b1917] flex items-center justify-between">
+                    <span>Suggestions</span>
+                    <span className="text-[9px] font-normal text-[#a09e9a]">Use ↑↓ to navigate</span>
                   </div>
+
                   {suggestions.map((s, idx) => (
                     <div
                       key={s.username}
                       onClick={() => handleSelectUsername(s.username)}
                       onMouseEnter={() => setSelectedIndex(idx)}
                       className={`flex items-center justify-between px-3.5 py-2.5 cursor-pointer transition ${
-                        selectedIndex === idx ? 'bg-emerald-500/15 text-white' : 'hover:bg-white/[0.04] text-slate-200'
+                        selectedIndex === idx
+                          ? 'bg-[#81b64c]/20 text-white'
+                          : 'hover:bg-[#2b2926] text-[#e2e1e0]'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -193,28 +233,28 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
                           <img
                             src={s.avatar}
                             alt={s.username}
-                            className="w-7 h-7 rounded-lg object-cover border border-white/10"
+                            className="w-8 h-8 rounded-md object-cover border border-[#3d3b38]"
                           />
                         ) : (
-                          <div className="w-7 h-7 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center font-bold text-xs text-emerald-400">
+                          <div className="w-8 h-8 rounded-md bg-[#302e2b] border border-[#3d3b38] flex items-center justify-center font-bold text-xs text-[#81b64c]">
                             {s.username.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div>
-                          <div className="flex items-center gap-1.5 text-xs font-semibold">
+                          <div className="flex items-center gap-1.5 text-xs font-bold">
                             {s.title && (
-                              <span className="px-1 py-0.2 rounded bg-red-600/90 text-white text-[9px] font-black uppercase">
+                              <span className="px-1 py-0.2 rounded bg-[#ca3431] text-white text-[9px] font-black uppercase">
                                 {s.title}
                               </span>
                             )}
-                            <span>{s.username}</span>
+                            <span className="text-white">{s.username}</span>
                           </div>
-                          {s.name && <div className="text-[11px] text-slate-400">{s.name}</div>}
+                          {s.name && <div className="text-[11px] text-[#a09e9a]">{s.name}</div>}
                         </div>
                       </div>
 
                       {s.rating && (
-                        <div className="text-xs font-mono font-semibold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                        <div className="text-xs font-mono font-bold text-[#e69d00] bg-[#e69d00]/10 px-2 py-0.5 rounded border border-[#e69d00]/20">
                           {s.rating}
                         </div>
                       )}
@@ -222,49 +262,36 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
                   ))}
                 </div>
               ) : inputVal.trim() ? (
-                <div className="p-3 text-xs text-slate-400 text-center">
-                  Press Enter to search for &quot;<span className="text-white font-medium">{inputVal}</span>&quot;
+                <div
+                  onClick={() => handleSelectUsername(inputVal.trim())}
+                  className="p-3 text-xs text-[#e2e1e0] hover:bg-[#2b2926] cursor-pointer flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Search className="w-3.5 h-3.5 text-[#81b64c]" />
+                    <span>Search for player &quot;<strong className="text-white">{inputVal}</strong>&quot;</span>
+                  </div>
+                  <span className="text-[10px] text-[#81b64c] font-bold uppercase">Press Enter ↵</span>
                 </div>
               ) : (
-                /* Recent searches & top grandmasters */
+                /* Recent searches */
                 <div>
                   {recentSearches.length > 0 && (
                     <div>
-                      <div className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 bg-white/[0.02]">
-                        <History className="w-3 h-3 text-slate-400" /> Recent
+                      <div className="px-3.5 py-1.5 text-[10px] font-bold text-[#8b8987] uppercase tracking-wider flex items-center gap-1 bg-[#1b1917]">
+                        <History className="w-3 h-3 text-[#8b8987]" /> Recent
                       </div>
                       {recentSearches.map((u) => (
                         <div
                           key={u}
                           onClick={() => handleSelectUsername(u)}
-                          className="flex items-center justify-between px-3.5 py-2 text-xs text-slate-300 hover:bg-white/[0.04] cursor-pointer"
+                          className="flex items-center justify-between px-3.5 py-2 text-xs text-[#c3c2c1] hover:bg-[#2b2926] cursor-pointer"
                         >
-                          <span className="font-medium">{u}</span>
-                          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+                          <span className="font-semibold text-white">{u}</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-[#5c5955]" />
                         </div>
                       ))}
                     </div>
                   )}
-
-                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 bg-white/[0.02]">
-                    <ChessKing size={12} className="text-amber-400" /> Top Grandmasters
-                  </div>
-                  {FEATURED_PLAYERS.map((fp) => (
-                    <div
-                      key={fp.username}
-                      onClick={() => handleSelectUsername(fp.username)}
-                      className="flex items-center justify-between px-3.5 py-2 text-xs text-slate-300 hover:bg-white/[0.04] cursor-pointer"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-1 py-0.2 rounded bg-red-600/90 text-white text-[9px] font-black">
-                          {fp.title}
-                        </span>
-                        <span className="font-semibold text-white">{fp.username}</span>
-                        <span className="text-[11px] text-slate-400">({fp.name})</span>
-                      </div>
-                      <span className="text-[11px] text-emerald-400">Select</span>
-                    </div>
-                  ))}
                 </div>
               )}
             </div>
@@ -272,80 +299,63 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
         </div>
       </div>
 
-      {/* Quick Picks Pills */}
-      <div className="flex flex-wrap items-center gap-2 mb-2 text-xs text-slate-400">
-        <span className="font-medium text-slate-400 flex items-center gap-1.5">
-          <ChessKing size={14} className="text-amber-400" /> Quick picks:
-        </span>
-        {FEATURED_PLAYERS.map((p) => (
-          <button
-            key={p.username}
-            onClick={() => handleSelectUsername(p.username)}
-            className="px-2.5 py-1 rounded-lg bg-[#0d0e12] hover:bg-slate-800 text-slate-300 border border-white/10 hover:border-emerald-500/40 transition text-xs font-medium cursor-pointer"
-          >
-            <span className="text-red-400 font-bold mr-1">{p.title}</span>
-            {p.name.split(' ')[0]}
-          </button>
-        ))}
-      </div>
-
-      {/* Loaded Player Card */}
+      {/* Loaded Player Banner in Chess.com Card Style */}
       {profile && (
-        <div className="mt-5 pt-5 border-t border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-5 bg-[#0e1015] p-5 rounded-xl border border-white/5">
-          <div className="flex items-center gap-4">
+        <div className="mt-4 pt-4 border-t border-[#3d3b38] flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#1e1c19] p-4 rounded-lg border border-[#3d3b38]">
+          <div className="flex items-center gap-3.5">
             {profile.avatar ? (
               <img
                 src={profile.avatar}
                 alt={profile.username}
-                className="w-14 h-14 rounded-xl object-cover border-2 border-emerald-500/40 shadow-lg"
+                className="w-12 h-12 rounded-lg object-cover border-2 border-[#81b64c] shadow"
               />
             ) : (
-              <div className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-xl text-emerald-400 border border-white/10">
+              <div className="w-12 h-12 rounded-lg bg-[#302e2b] flex items-center justify-center font-bold text-lg text-[#81b64c] border border-[#3d3b38]">
                 {profile.username.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {profile.title && (
-                  <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black tracking-wider uppercase">
+                  <span className="px-1.5 py-0.2 rounded bg-[#ca3431] text-white text-[10px] font-black uppercase">
                     {profile.title}
                   </span>
                 )}
-                <span className="text-lg font-bold text-white">{profile.username}</span>
-                {profile.name && <span className="text-xs text-slate-400">({profile.name})</span>}
+                <span className="text-base font-bold text-white">{profile.username}</span>
+                {profile.name && <span className="text-xs text-[#a09e9a]">({profile.name})</span>}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[#8b8987] mt-0.5">
                 Followers: {profile.followers?.toLocaleString() || 0} •{' '}
                 <a
                   href={profile.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-emerald-400 hover:underline"
+                  className="text-[#81b64c] hover:underline font-medium"
                 >
-                  Public Profile ↗
+                  Chess.com Profile ↗
                 </a>
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-[#15171f] border border-white/10 px-4 py-2.5 rounded-xl text-center shadow-inner">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium mb-0.5">
-                <Clock className="w-3 h-3 text-emerald-400" /> Rapid
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="bg-[#262421] border border-[#3d3b38] px-3.5 py-2 rounded-lg text-center">
+              <div className="flex items-center justify-center gap-1 text-[11px] text-[#a09e9a] font-semibold">
+                <Clock className="w-3 h-3 text-[#81b64c]" /> Rapid
               </div>
-              <div className="text-base font-bold text-white font-mono">{rapidRating || '—'}</div>
+              <div className="text-sm font-bold text-white font-mono">{rapidRating || '—'}</div>
             </div>
-            <div className="bg-[#15171f] border border-white/10 px-4 py-2.5 rounded-xl text-center shadow-inner">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium mb-0.5">
-                <Zap className="w-3 h-3 text-amber-400" /> Blitz
+            <div className="bg-[#262421] border border-[#3d3b38] px-3.5 py-2 rounded-lg text-center">
+              <div className="flex items-center justify-center gap-1 text-[11px] text-[#a09e9a] font-semibold">
+                <Zap className="w-3 h-3 text-[#f0c15c]" /> Blitz
               </div>
-              <div className="text-base font-bold text-white font-mono">{blitzRating || '—'}</div>
+              <div className="text-sm font-bold text-white font-mono">{blitzRating || '—'}</div>
             </div>
-            <div className="bg-[#15171f] border border-white/10 px-4 py-2.5 rounded-xl text-center shadow-inner">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium mb-0.5">
-                <Shield className="w-3 h-3 text-cyan-400" /> Bullet
+            <div className="bg-[#262421] border border-[#3d3b38] px-3.5 py-2 rounded-lg text-center">
+              <div className="flex items-center justify-center gap-1 text-[11px] text-[#a09e9a] font-semibold">
+                <Shield className="w-3 h-3 text-[#5c8bb0]" /> Bullet
               </div>
-              <div className="text-base font-bold text-white font-mono">{bulletRating || '—'}</div>
+              <div className="text-sm font-bold text-white font-mono">{bulletRating || '—'}</div>
             </div>
           </div>
         </div>

@@ -90,30 +90,30 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-[#302e2b] text-[#e2e1e0] flex flex-col font-sans">
       <Navbar
         onOpenPgnModal={() => setIsPgnModalOpen(true)}
         stockfishReady={stockfishReady}
       />
 
-      <main className="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
+      <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
         {/* Error notification banner */}
         {errorMessage && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-between text-sm shadow-lg">
+          <div className="mb-5 p-4 rounded-xl bg-[#ca3431]/15 border border-[#ca3431]/40 text-[#fca5a5] flex items-center justify-between text-sm shadow-lg">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
             <button
               onClick={() => setErrorMessage(null)}
-              className="text-xs hover:underline text-red-300 font-semibold cursor-pointer"
+              className="text-xs hover:underline text-white font-bold cursor-pointer"
             >
               Dismiss
             </button>
           </div>
         )}
 
-        {/* Player Search Section with Autocomplete */}
+        {/* Player Search Section with Instant Autocomplete */}
         <PlayerSearch
           onSearch={handlePlayerSearch}
           profile={profile}
@@ -122,7 +122,7 @@ export function App() {
 
         {/* Game Analysis Workbench if a game has been analyzed */}
         {currentReport && (
-          <div className="mb-10 animate-in fade-in duration-300">
+          <div className="mb-8 animate-in fade-in duration-200">
             <AnalysisWorkbench report={currentReport} />
           </div>
         )}
@@ -137,46 +137,43 @@ export function App() {
           />
         )}
 
-        {/* Production-grade welcome hero when no match is open */}
+        {/* Empty State / Welcome Screen in Chess.com Card Style */}
         {!profile && !currentReport && (
-          <div className="py-20 text-center max-w-xl mx-auto border border-white/[0.06] rounded-3xl p-10 bg-[#12141a]/60 shadow-2xl relative overflow-hidden">
-            {/* Subtle background glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500/20 via-emerald-500/20 to-teal-500/20 border border-white/10 text-amber-400 mx-auto flex items-center justify-center mb-5 shadow-xl">
-              <ChessKing size={32} />
+          <div className="py-16 text-center max-w-lg mx-auto border border-[#3d3b38] rounded-2xl p-8 bg-[#262421] shadow-xl">
+            <div className="w-14 h-14 rounded-2xl bg-[#81b64c]/20 border border-[#81b64c]/40 text-[#81b64c] mx-auto flex items-center justify-center mb-4 shadow">
+              <ChessKing size={30} />
             </div>
 
-            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">
-              Grandmaster Game Review
+            <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
+              Chess Game Review
             </h3>
-            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-              Analyze your games with the world&apos;s strongest chess engine. Detect blunders, mistakes,
-              inaccuracies, brilliant moves, and visualize your win-chance momentum over the board.
+            <p className="text-xs text-[#a09e9a] mb-6 leading-relaxed">
+              Search any Chess.com username above to browse your games, review accuracy, detect blunders,
+              and see engine best moves right on the board.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
-                onClick={() => handlePlayerSearch('hikaru')}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-bold shadow-lg shadow-emerald-950/50 transition cursor-pointer flex items-center justify-center gap-2"
+                onClick={() => handlePlayerSearch('sachinbhapkar')}
+                className="chess-btn-green w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow"
               >
-                <Sparkles className="w-4 h-4" />
-                <span>Try GM Hikaru Nakamura</span>
+                <Sparkles size={14} />
+                <span>Try user: sachinbhapkar</span>
               </button>
 
               <button
-                onClick={() => setIsPgnModalOpen(true)}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#15171f] hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-2"
+                onClick={() => handlePlayerSearch('hikaru')}
+                className="chess-btn-secondary w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
               >
-                <ChessKnight size={16} />
-                <span>Import PGN</span>
+                <ChessKnight size={14} />
+                <span>GM Hikaru Nakamura</span>
               </button>
             </div>
           </div>
         )}
       </main>
 
-      {/* PGN Paste Modal */}
+      {/* Custom PGN Modal */}
       <PgnModal
         isOpen={isPgnModalOpen}
         onClose={() => setIsPgnModalOpen(false)}
