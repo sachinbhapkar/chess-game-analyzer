@@ -12,7 +12,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,19 +115,25 @@ public class StockfishService {
 
             log.info("Launching chess engine session: {} at {}", this.engine != null ? this.engine.getName() : "Stockfish", binaryPath);
 
-            ProcessBuilder pb = new ProcessBuilder(binaryPath);
+            List<String> cmd = new ArrayList<>();
+            cmd.add(binaryPath);
+            if (this.engine != null && this.engine.getLaunchArgs() != null && !this.engine.getLaunchArgs().isEmpty()) {
+                cmd.addAll(this.engine.getLaunchArgs());
+            }
+
+            ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(true);
             this.process = pb.start();
             this.reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
             this.writer = new PrintWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8), true);
 
             sendCommand("uci");
-            waitFor("uciok", 5000);
+            waitFor("uciok", 2500);
             sendCommand("isready");
-            waitFor("readyok", 10000);
+            waitFor("readyok", 3000);
             sendCommand("ucinewgame");
             sendCommand("isready");
-            waitFor("readyok", 5000);
+            waitFor("readyok", 3000);
         }
 
         public EngineInfo getEngine() {
@@ -139,6 +148,9 @@ public class StockfishService {
             long deadline = System.currentTimeMillis() + timeoutMs;
             String line;
             while (System.currentTimeMillis() < deadline) {
+                if (!process.isAlive()) {
+                    throw new IllegalStateException("Chess engine process terminated unexpectedly during startup");
+                }
                 if (reader.ready()) {
                     line = reader.readLine();
                     if (line != null && line.contains(expected)) {
@@ -148,6 +160,8 @@ public class StockfishService {
                     Thread.sleep(10);
                 }
             }
+            throw new TimeoutException("Engine " + (engine != null ? engine.getName() : "Chess Engine") +
+                    " failed to respond with '" + expected + "' within " + timeoutMs + "ms");
         }
 
         public EvaluationResult evaluateFen(String fen, int depth, int movetimeMs) {
@@ -161,9 +175,10 @@ public class StockfishService {
                     int targetNodes = depth > 0 ? Math.min(depth * 5, 50) : 30;
                     sendCommand("go nodes " + targetNodes);
                 } else {
-                    int targetDepth = depth > 0 ? depth : (engine != null ? engine.getDefaultDepth() : defaultDepth);
-                    if (movetimeMs > 0) {
-                        sendCommand("go depth " + targetDepth + " movetime " + movetimeMs);
+                    int targetDepth = depth > 0 ? depth : (engine != null && engine.getDefaultDepth() > 0 ? engine.getDefaultDepth() : defaultDepth);
+                    int targetMovetime = movetimeMs > 0 ? movetimeMs : (engine != null && engine.getDefaultMovetimeMs() > 0 ? engine.getDefaultMovetimeMs() : defaultMovetimeMs);
+                    if (targetMovetime > 0) {
+                        sendCommand("go depth " + targetDepth + " movetime " + targetMovetime);
                     } else {
                         sendCommand("go depth " + targetDepth);
                     }
@@ -180,32 +195,39 @@ public class StockfishService {
                     isWhiteToMove = false;
                 }
 
-                long maxWait = System.currentTimeMillis() + (movetimeMs > 0 ? movetimeMs + 3000 : 8000);
+                long maxWait = System.currentTimeMillis() + (movetimeMs > 0 ? movetimeMs + 2000 : 2500);
                 String line;
                 while (System.currentTimeMillis() < maxWait) {
-                    line = reader.readLine();
-                    if (line == null) break;
-
-                    if (line.contains("score cp ")) {
-                        Matcher matcher = SCORE_CP_PATTERN.matcher(line);
-                        if (matcher.find()) {
-                            lastCp = Integer.parseInt(matcher.group(1));
-                            lastMate = null;
-                        }
-                    } else if (line.contains("score mate ")) {
-                        Matcher matcher = SCORE_MATE_PATTERN.matcher(line);
-                        if (matcher.find()) {
-                            lastMate = Integer.parseInt(matcher.group(1));
-                            lastCp = null;
-                        }
+                    if (!process.isAlive()) {
+                        throw new IllegalStateException("Engine process terminated during evaluation");
                     }
+                    if (reader.ready()) {
+                        line = reader.readLine();
+                        if (line == null) break;
 
-                    if (line.startsWith("bestmove")) {
-                        Matcher matcher = BEST_MOVE_PATTERN.matcher(line);
-                        if (matcher.find()) {
-                            bestMove = matcher.group(1);
+                        if (line.contains("score cp ")) {
+                            Matcher matcher = SCORE_CP_PATTERN.matcher(line);
+                            if (matcher.find()) {
+                                lastCp = Integer.parseInt(matcher.group(1));
+                                lastMate = null;
+                            }
+                        } else if (line.contains("score mate ")) {
+                            Matcher matcher = SCORE_MATE_PATTERN.matcher(line);
+                            if (matcher.find()) {
+                                lastMate = Integer.parseInt(matcher.group(1));
+                                lastCp = null;
+                            }
                         }
-                        break;
+
+                        if (line.startsWith("bestmove")) {
+                            Matcher matcher = BEST_MOVE_PATTERN.matcher(line);
+                            if (matcher.find()) {
+                                bestMove = matcher.group(1);
+                            }
+                            break;
+                        }
+                    } else {
+                        Thread.sleep(5);
                     }
                 }
 

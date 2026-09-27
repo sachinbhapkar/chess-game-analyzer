@@ -24,5 +24,6 @@ public class EngineInfo {
     private String projectUrl; // e.g. "https://stockfishchess.org"
     private int defaultDepth;
     private int defaultMovetimeMs;
+    private java.util.List<String> launchArgs;
     private boolean isDefault;
 }

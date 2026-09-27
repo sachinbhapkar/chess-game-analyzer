@@ -157,6 +157,7 @@ public class EngineRegistryService {
                 .projectUrl("https://www.gnu.org/software/chess")
                 .defaultDepth(8)
                 .defaultMovetimeMs(0)
+                .launchArgs(List.of("-u"))
                 .isDefault(false)
                 .build(),
                 new String[]{"/opt/homebrew/bin/gnuchess", "/usr/local/bin/gnuchess", "gnuchess"}

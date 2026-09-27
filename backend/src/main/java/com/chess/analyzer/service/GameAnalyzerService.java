@@ -33,8 +33,8 @@ public class GameAnalyzerService {
     }
 
     public GameAnalysisReport analyzePgn(String pgn, Integer requestedDepth, Integer requestedMovetime, String engineId) {
-        int depth = requestedDepth != null && requestedDepth > 0 ? requestedDepth : stockfishService.getDefaultDepth();
-        int movetime = requestedMovetime != null && requestedMovetime > 0 ? requestedMovetime : stockfishService.getDefaultMovetimeMs();
+        int depth = requestedDepth != null && requestedDepth > 0 ? requestedDepth : 0;
+        int movetime = requestedMovetime != null && requestedMovetime > 0 ? requestedMovetime : 0;
 
         // Extract metadata from PGN headers
         String whitePlayer = ChessComService.extractPgnHeader(pgn, "White");
@@ -85,7 +85,14 @@ public class GameAnalyzerService {
         double blackTotalCpl = 0.0;
 
         com.chess.analyzer.model.EngineInfo usedEngine = null;
-        try (StockfishService.StockfishSession session = stockfishService.createSession(engineId)) {
+        StockfishService.StockfishSession session = null;
+        try {
+            try {
+                session = stockfishService.createSession(engineId);
+            } catch (Exception e) {
+                log.warn("Failed to initialize requested engine '{}'. Falling back to default engine: {}", engineId, e.getMessage());
+                session = stockfishService.createSession((String) null);
+            }
             usedEngine = session.getEngine();
             // Initial position evaluation
             String currentFen = board.getFen();
@@ -243,8 +250,12 @@ public class GameAnalyzerService {
                 lastEval = evalAfter;
             }
         } catch (Exception e) {
-            log.error("Stockfish analysis error", e);
+            log.error("Engine analysis error", e);
             throw new RuntimeException("Engine analysis failed: " + e.getMessage());
+        } finally {
+            if (session != null) {
+                session.close();
+            }
         }
 
         // Calculate accuracy percentage
