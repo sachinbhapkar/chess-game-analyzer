@@ -390,7 +390,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
             {/* Chessboard + Vertical Eval Bar */}
             <div className="flex gap-2.5 w-full">
               {/* Smooth Chess.com Evaluation Bar */}
-              <div className="w-7 h-[480px] bg-[#1e1c19] rounded-md overflow-hidden border border-[#3d3b38] flex flex-col justify-end relative shadow-2xl">
+              <div className="w-7 h-[480px] bg-[#1e1c19] eval-bar-track rounded-md overflow-hidden border border-[#3d3b38] flex flex-col justify-end relative shadow-2xl">
                 <div
                   className="w-full bg-[#f1f1f1] transition-all duration-300 ease-out"
                   style={{ height: `${whiteHeight}%` }}
@@ -526,7 +526,15 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
           <div className="bg-[#262421] border border-[#3d3b38] rounded-xl p-5 shadow-xl">
             {/* Accuracy Comparison */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-gradient-to-b from-[#1e1c19] to-[#24221e] border border-emerald-500/25 p-3.5 rounded-xl text-center shadow-lg relative overflow-hidden group">
+              <div
+                className={`border p-3.5 rounded-xl text-center shadow-lg relative overflow-hidden group ${
+                  theme === 'white'
+                    ? 'bg-gradient-to-b from-emerald-50/80 to-white border-emerald-300/60 shadow-sm'
+                    : theme === 'black'
+                    ? 'bg-gradient-to-b from-[#121215] to-[#09090b] border-emerald-500/30'
+                    : 'bg-gradient-to-b from-[#1e1c19] to-[#24221e] border-emerald-500/25'
+                }`}
+              >
                 <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-75" />
                 <div className="flex items-center justify-center gap-1.5 text-xs text-[#a09e9a] font-bold mb-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-300 shadow-sm" />
@@ -543,7 +551,15 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </div>
               </div>
 
-              <div className="bg-gradient-to-b from-[#1e1c19] to-[#24221e] border border-sky-500/25 p-3.5 rounded-xl text-center shadow-lg relative overflow-hidden group">
+              <div
+                className={`border p-3.5 rounded-xl text-center shadow-lg relative overflow-hidden group ${
+                  theme === 'white'
+                    ? 'bg-gradient-to-b from-sky-50/80 to-white border-sky-300/60 shadow-sm'
+                    : theme === 'black'
+                    ? 'bg-gradient-to-b from-[#121215] to-[#09090b] border-sky-500/30'
+                    : 'bg-gradient-to-b from-[#1e1c19] to-[#24221e] border-sky-500/25'
+                }`}
+              >
                 <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-sky-400 to-transparent opacity-75" />
                 <div className="flex items-center justify-center gap-1.5 text-xs text-[#a09e9a] font-bold mb-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#181614] border border-slate-600 shadow-sm" />

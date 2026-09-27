@@ -64,12 +64,22 @@ export const ThemeSwitcher: React.FC = () => {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#21201d]/95 backdrop-blur-xl border border-[#3d3b38] shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
           {/* Tabs: Theme vs Wallpaper */}
-          <div className="flex items-center p-0.5 bg-[#181614] rounded-lg border border-[#3d3b38] mb-2 text-xs font-bold">
+          <div
+            className={`flex items-center p-0.5 rounded-lg border mb-2 text-xs font-bold ${
+              theme === 'white'
+                ? 'bg-slate-100 border-slate-200'
+                : theme === 'black'
+                ? 'bg-[#121215] border-[#27272a]'
+                : 'bg-[#181614] border-[#3d3b38]'
+            }`}
+          >
             <button
               onClick={() => setActiveTab('theme')}
               className={`flex-1 py-1 rounded-md transition text-center cursor-pointer ${
                 activeTab === 'theme'
-                  ? 'bg-[#81b64c] text-white shadow'
+                  ? 'bg-[#81b64c] text-white shadow keep-white'
+                  : theme === 'white'
+                  ? 'text-slate-600 hover:text-slate-900'
                   : 'text-[#8b8987] hover:text-white'
               }`}
             >
@@ -79,7 +89,9 @@ export const ThemeSwitcher: React.FC = () => {
               onClick={() => setActiveTab('wallpaper')}
               className={`flex-1 py-1 rounded-md transition text-center flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === 'wallpaper'
-                  ? 'bg-[#81b64c] text-white shadow'
+                  ? 'bg-[#81b64c] text-white shadow keep-white'
+                  : theme === 'white'
+                  ? 'text-slate-600 hover:text-slate-900'
                   : 'text-[#8b8987] hover:text-white'
               }`}
             >

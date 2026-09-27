@@ -117,13 +117,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setThemeState(newTheme);
     localStorage.setItem('chess_theme', newTheme);
 
-    // If wallpaper matches previous theme's default, adapt to new theme's default
-    if (newTheme === 'black' && (wallpaper === 'slate' || wallpaper === 'studio')) {
-      setWallpaper('carbon');
-    } else if (newTheme === 'white' && (wallpaper === 'slate' || wallpaper === 'carbon')) {
-      setWallpaper('studio');
-    } else if (newTheme === 'dark' && (wallpaper === 'studio' || wallpaper === 'carbon')) {
-      setWallpaper('slate');
+    // Adapt wallpaper to match the new theme aesthetic
+    if (newTheme === 'white') {
+      if (wallpaper !== 'solid') {
+        setWallpaper('studio');
+      }
+    } else if (newTheme === 'black') {
+      if (wallpaper === 'studio' || wallpaper === 'slate') {
+        setWallpaper('carbon');
+      }
+    } else if (newTheme === 'dark') {
+      if (wallpaper === 'studio' || wallpaper === 'carbon') {
+        setWallpaper('slate');
+      }
     }
   };
 

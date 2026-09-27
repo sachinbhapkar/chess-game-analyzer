@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Clock, Zap, Shield, History, X, ChevronRight, Loader2 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 import type { PlayerProfile, PlayerSuggestion } from '../types/chess';
 import { fetchPlayerSuggestions } from '../services/api';
 
@@ -22,6 +23,7 @@ const LOCAL_TOP_PLAYERS: PlayerSuggestion[] = [
 ];
 
 export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, loading }) => {
+  const { theme } = useTheme();
   const [inputVal, setInputVal] = useState('');
   const [suggestions, setSuggestions] = useState<PlayerSuggestion[]>(LOCAL_TOP_PLAYERS);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -345,20 +347,46 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
           </div>
 
           <div className="grid grid-cols-3 gap-2.5">
-            <div className="bg-gradient-to-b from-emerald-500/15 to-[#262421] border border-emerald-500/40 px-3.5 py-2.5 rounded-xl text-center shadow-sm">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-400 font-black uppercase tracking-wider">
+            <div
+              className={`border px-3.5 py-2.5 rounded-xl text-center shadow-sm ${
+                theme === 'white'
+                  ? 'bg-gradient-to-b from-emerald-50 to-white border-emerald-200 shadow-sm'
+                  : theme === 'black'
+                  ? 'bg-gradient-to-b from-emerald-500/15 to-[#09090b] border-emerald-500/40'
+                  : 'bg-gradient-to-b from-emerald-500/15 to-[#262421] border-emerald-500/40'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-500 font-black uppercase tracking-wider">
                 <Clock className="w-3.5 h-3.5" /> Rapid
               </div>
               <div className="text-base font-black text-white font-mono mt-0.5">{rapidRating || '—'}</div>
             </div>
-            <div className="bg-gradient-to-b from-amber-500/15 to-[#262421] border border-amber-500/40 px-3.5 py-2.5 rounded-xl text-center shadow-sm">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-amber-400 font-black uppercase tracking-wider">
+
+            <div
+              className={`border px-3.5 py-2.5 rounded-xl text-center shadow-sm ${
+                theme === 'white'
+                  ? 'bg-gradient-to-b from-amber-50 to-white border-amber-200 shadow-sm'
+                  : theme === 'black'
+                  ? 'bg-gradient-to-b from-amber-500/15 to-[#09090b] border-amber-500/40'
+                  : 'bg-gradient-to-b from-amber-500/15 to-[#262421] border-amber-500/40'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-amber-500 font-black uppercase tracking-wider">
                 <Zap className="w-3.5 h-3.5" /> Blitz
               </div>
               <div className="text-base font-black text-white font-mono mt-0.5">{blitzRating || '—'}</div>
             </div>
-            <div className="bg-gradient-to-b from-orange-500/15 to-[#262421] border border-orange-500/40 px-3.5 py-2.5 rounded-xl text-center shadow-sm">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-orange-400 font-black uppercase tracking-wider">
+
+            <div
+              className={`border px-3.5 py-2.5 rounded-xl text-center shadow-sm ${
+                theme === 'white'
+                  ? 'bg-gradient-to-b from-orange-50 to-white border-orange-200 shadow-sm'
+                  : theme === 'black'
+                  ? 'bg-gradient-to-b from-orange-500/15 to-[#09090b] border-orange-500/40'
+                  : 'bg-gradient-to-b from-orange-500/15 to-[#262421] border-orange-500/40'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-orange-500 font-black uppercase tracking-wider">
                 <Shield className="w-3.5 h-3.5" /> Bullet
               </div>
               <div className="text-base font-black text-white font-mono mt-0.5">{bulletRating || '—'}</div>
