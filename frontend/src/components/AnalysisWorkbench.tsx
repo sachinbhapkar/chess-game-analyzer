@@ -48,6 +48,16 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
     setViewMode('played');
   }, [currentPlyIndex]);
 
+  // Only blunders, mistakes, inaccuracies, and missed wins should have suggestion arrows on the board
+  const isErrorMove = (judgment?: MoveJudgment): boolean => {
+    return (
+      judgment === 'BLUNDER' ||
+      judgment === 'MISTAKE' ||
+      judgment === 'INACCURACY' ||
+      judgment === 'MISSED_WIN'
+    );
+  };
+
   // Compute best move in standard algebraic notation (SAN) and resulting board state
   const bestMoveInfo = useMemo(() => {
     if (!currentMove || !currentMove.bestMoveUci || currentMove.bestMoveUci.length < 4) {
@@ -73,6 +83,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
     }
   }, [currentMove]);
 
+  // True only when the move was an error and a better move exists
+  const hasSuggestion = Boolean(currentMove && isErrorMove(currentMove.judgment) && bestMoveInfo);
+
   // In 'best' mode, board reverts to fenBefore so user sees the glowing arrow of what should have been played.
   // In 'best_preview' mode, board shows fenAfterBest so user sees the resulting position.
   const currentFen =
@@ -89,6 +102,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
     let interval: any;
     if (isPlaying) {
       interval = setInterval(() => {
+        setViewMode('played');
         setCurrentPlyIndex((prev) => {
           if (prev < totalMoves - 1) {
             return prev + 1;
@@ -168,21 +182,25 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
 
   const goToStart = () => {
     setIsPlaying(false);
+    setViewMode('played');
     setCurrentPlyIndex(-1);
   };
 
   const goToPrev = () => {
     setIsPlaying(false);
+    setViewMode('played');
     setCurrentPlyIndex((prev) => Math.max(-1, prev - 1));
   };
 
   const goToNext = () => {
     setIsPlaying(false);
+    setViewMode('played');
     setCurrentPlyIndex((prev) => Math.min(totalMoves - 1, prev + 1));
   };
 
   const goToEnd = () => {
     setIsPlaying(false);
+    setViewMode('played');
     setCurrentPlyIndex(totalMoves - 1);
   };
 
@@ -197,7 +215,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
     const arrows: { startSquare: string; endSquare: string; color: string }[] = [];
 
     if (viewMode === 'best') {
-      // In Best Move mode, show glowing green engine recommendation arrow
+      // In Best Move mode, show ONLY the glowing green engine recommendation arrow
       if (bestMoveInfo) {
         arrows.push({
           startSquare: bestMoveInfo.from,
@@ -205,46 +223,54 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
           color: 'rgba(129, 182, 76, 0.95)', // Chess.com green arrow
         });
       }
-    } else if (viewMode === 'played') {
-      // In Played mode, if it's best or brilliant, show green arrow
-      if (currentMove.judgment === 'BEST' || currentMove.judgment === 'BRILLIANT') {
-        if (currentMove.fromSquare && currentMove.toSquare) {
-          arrows.push({
-            startSquare: currentMove.fromSquare,
-            endSquare: currentMove.toSquare,
-            color: 'rgba(129, 182, 76, 0.9)',
-          });
-        }
-      } else {
-        // Move was Blunder, Mistake, Inaccuracy, Missed Win, or Good
-        // 1. Draw the played move arrow (in red or orange)
-        if (currentMove.fromSquare && currentMove.toSquare) {
-          const playedColor =
-            currentMove.judgment === 'BLUNDER'
-              ? 'rgba(220, 38, 38, 0.85)' // Red arrow for blunder
-              : currentMove.judgment === 'MISTAKE'
-              ? 'rgba(234, 88, 12, 0.85)' // Orange arrow for mistake
-              : currentMove.judgment === 'INACCURACY' || currentMove.judgment === 'MISSED_WIN'
-              ? 'rgba(245, 158, 11, 0.85)' // Amber arrow
-              : 'rgba(148, 163, 184, 0.7)'; // Slate for other
+      return arrows;
+    }
 
-          arrows.push({
-            startSquare: currentMove.fromSquare,
-            endSquare: currentMove.toSquare,
-            color: playedColor,
-          });
-        }
+    if (viewMode === 'best_preview') {
+      // In Preview mode, the piece is already placed on bestMoveInfo.to, so no arrow needed
+      return [];
+    }
 
-        // 2. SUGGESTED MOVE SHOWN DIRECTLY ON THE BOARD:
-        // Always draw the engine recommendation green arrow directly on the board!
-        if (bestMoveInfo) {
-          arrows.push({
-            startSquare: bestMoveInfo.from,
-            endSquare: bestMoveInfo.to,
-            color: 'rgba(129, 182, 76, 0.95)', // Chess.com engine glowing green arrow
-          });
-        }
+    // In Played mode:
+    // 1. Draw the played move arrow
+    if (currentMove.fromSquare && currentMove.toSquare) {
+      let playedColor = 'rgba(148, 163, 184, 0.7)'; // Default slate
+      if (currentMove.judgment === 'BEST') {
+        playedColor = 'rgba(129, 182, 76, 0.9)'; // Green
+      } else if (currentMove.judgment === 'BRILLIANT') {
+        playedColor = 'rgba(27, 172, 166, 0.95)'; // Cyan
+      } else if (currentMove.judgment === 'GREAT') {
+        playedColor = 'rgba(59, 130, 246, 0.9)'; // Blue
+      } else if (currentMove.judgment === 'EXCELLENT' || currentMove.judgment === 'GOOD') {
+        playedColor = 'rgba(150, 188, 75, 0.85)'; // Olive green
+      } else if (currentMove.judgment === 'BOOK') {
+        playedColor = 'rgba(168, 136, 101, 0.85)'; // Book tan
+      } else if (currentMove.judgment === 'BLUNDER') {
+        playedColor = 'rgba(220, 38, 38, 0.85)'; // Red arrow for blunder
+      } else if (
+        currentMove.judgment === 'MISTAKE' ||
+        currentMove.judgment === 'INACCURACY' ||
+        currentMove.judgment === 'MISSED_WIN'
+      ) {
+        playedColor = 'rgba(234, 88, 12, 0.85)'; // Orange arrow for mistake
       }
+
+      arrows.push({
+        startSquare: currentMove.fromSquare,
+        endSquare: currentMove.toSquare,
+        color: playedColor,
+      });
+    }
+
+    // 2. SUGGESTED MOVE ARROW:
+    // ONLY drawn when the move is an ERROR (Blunder, Mistake, Inaccuracy, Missed Win).
+    // On all normal moves (Book, Best, Good, etc.), it immediately DISAPPEARS!
+    if (hasSuggestion && bestMoveInfo) {
+      arrows.push({
+        startSquare: bestMoveInfo.from,
+        endSquare: bestMoveInfo.to,
+        color: 'rgba(129, 182, 76, 0.95)', // Chess.com engine glowing green arrow
+      });
     }
 
     return arrows;
@@ -289,12 +315,8 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
       styles[currentMove.toSquare] = { backgroundColor: tintColor };
     }
 
-    // DIRECTLY HIGHLIGHT SUGGESTED MOVE DESTINATION ON BOARD
-    if (
-      bestMoveInfo &&
-      currentMove.judgment !== 'BEST' &&
-      currentMove.judgment !== 'BRILLIANT'
-    ) {
+    // DIRECTLY HIGHLIGHT SUGGESTED MOVE DESTINATION ONLY FOR ERRORS
+    if (hasSuggestion && bestMoveInfo) {
       styles[bestMoveInfo.to] = {
         backgroundColor: 'rgba(129, 182, 76, 0.35)',
         boxShadow: 'inset 0 0 0 2px rgba(129, 182, 76, 0.9)',
@@ -410,7 +432,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
       : currentMove?.toSquare;
 
   const badgePos = badgeTargetSquare ? getBadgePosition(badgeTargetSquare) : null;
-  const bestBadgePos = bestMoveInfo ? getBadgePosition(bestMoveInfo.to) : null;
+  const bestBadgePos = hasSuggestion && bestMoveInfo ? getBadgePosition(bestMoveInfo.to) : null;
 
   const activeBadgeType: MoveJudgment =
     viewMode === 'best' || viewMode === 'best_preview'
@@ -440,6 +462,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
         m.judgment === 'BRILLIANT'
       ) {
         setIsPlaying(false);
+        setViewMode('played');
         setCurrentPlyIndex(i);
         return;
       }
@@ -454,6 +477,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
         m.judgment === 'BRILLIANT'
       ) {
         setIsPlaying(false);
+        setViewMode('played');
         setCurrentPlyIndex(i);
         return;
       }
@@ -603,6 +627,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
               <div className="flex-1 rounded-md overflow-hidden shadow-2xl border border-[#3d3b38] relative bg-[#262421]">
                 <Chessboard
                   options={{
+                    id: `board-ply-${currentPlyIndex}-${viewMode}`,
                     position: currentFen,
                     boardOrientation: boardOrientation,
                     arrows: getCustomArrows(),
@@ -612,6 +637,8 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                     lightSquareStyle: { backgroundColor: theme === 'black' ? '#8a939e' : '#ebecd0' },
                     animationDurationInMs: 180,
                     allowDragging: false,
+                    allowDrawingArrows: false,
+                    clearArrowsOnPositionChange: true,
                   }}
                 />
 
@@ -632,13 +659,12 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                   </div>
                 )}
 
-                {/* Floating BEST Move Badge Directly on the Suggested Square on the Board */}
+                {/* Floating BEST Move Badge Directly on the Suggested Square on the Board (Error moves only) */}
                 {bestBadgePos &&
                   viewMode === 'played' &&
+                  hasSuggestion &&
                   bestMoveInfo &&
                   currentMove &&
-                  currentMove.judgment !== 'BEST' &&
-                  currentMove.judgment !== 'BRILLIANT' &&
                   bestMoveInfo.to !== currentMove.toSquare && (
                     <div
                       className="absolute pointer-events-none z-20 flex items-start justify-end p-1 transition-all duration-150 ease-out"
@@ -657,8 +683,8 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
               </div>
             </div>
 
-            {/* On-Board Suggested Move Action Strip (Directly Below Chessboard) */}
-            {bestMoveInfo && currentMove && currentMove.judgment !== 'BEST' && currentMove.judgment !== 'BRILLIANT' && (
+            {/* On-Board Suggested Move Action Strip (Directly Below Chessboard - Errors only) */}
+            {hasSuggestion && bestMoveInfo && currentMove && (
               <div className="bg-[#1e1c19] border border-[#81b64c]/40 rounded-xl p-2.5 shadow-lg flex items-center justify-between gap-3 animate-in fade-in duration-150">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-[#81b64c]/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c] shrink-0">
@@ -779,7 +805,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
               </div>
 
               <div className="flex items-center gap-2">
-                {bestMoveInfo && currentMove && currentMove.judgment !== 'BEST' && currentMove.judgment !== 'BRILLIANT' && (
+                {hasSuggestion && bestMoveInfo && currentMove && (
                   <button
                     onClick={() => setViewMode(viewMode === 'best' ? 'played' : 'best')}
                     title="Toggle suggested best move on board"
@@ -922,7 +948,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
             {currentMove ? (
               <div className="space-y-3">
                 {/* Played vs Best Move Interactive Comparison Card */}
-                {bestMoveInfo && currentMove.judgment !== 'BEST' && currentMove.judgment !== 'BRILLIANT' && (
+                {hasSuggestion && bestMoveInfo && (
                   <div className="bg-[#1e1c19] p-2 rounded-xl border border-[#3d3b38] space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       {/* You Played Button */}
@@ -1014,7 +1040,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                   </div>
 
                   <div className="pt-2 border-t border-[#2d2b28] text-[#e2e1e0] leading-relaxed">
-                    {bestMoveInfo && currentMove.judgment !== 'BEST' ? (
+                    {hasSuggestion && bestMoveInfo ? (
                       <>
                         <span className="font-bold text-white block mb-1">
                           {currentMove.judgment === 'BLUNDER'
@@ -1181,6 +1207,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                       ref={currentPlyIndex === whitePly ? activeMoveRef : null}
                       onClick={() => {
                         setIsPlaying(false);
+                        setViewMode('played');
                         setCurrentPlyIndex(whitePly);
                       }}
                       className={`col-span-5 flex items-center justify-between px-2.5 py-1 rounded cursor-pointer transition ${
@@ -1199,6 +1226,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                         ref={currentPlyIndex === blackPly ? activeMoveRef : null}
                         onClick={() => {
                           setIsPlaying(false);
+                          setViewMode('played');
                           setCurrentPlyIndex(blackPly);
                         }}
                         className={`col-span-5 flex items-center justify-between px-2.5 py-1 rounded cursor-pointer transition ${
@@ -1297,6 +1325,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                   className="cursor-pointer hover:scale-125 transition-transform"
                   onClick={() => {
                     setIsPlaying(false);
+                    setViewMode('played');
                     setCurrentPlyIndex(idx);
                   }}
                 >
