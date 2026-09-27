@@ -1,13 +1,56 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   THEME CSS VARIABLES (Dark, Black OLED, White)
+   ========================================================================== */
+:root, [data-theme="dark"] {
+  --bg-page: #302e2b;
+  --bg-surface: #262421;
+  --bg-subcontainer: #1e1c19;
+  --bg-elevated: #21201d;
+  --border-app: #3d3b38;
+  --text-main: #e2e1e0;
+  --text-secondary: #a09e9a;
+  --text-muted: #8b8987;
+  --scrollbar-track: #21201d;
+  --scrollbar-thumb: #454340;
+}
+
+[data-theme="black"] {
+  --bg-page: #000000;
+  --bg-surface: #09090b;
+  --bg-subcontainer: #121215;
+  --bg-elevated: #0d0d0f;
+  --border-app: #27272a;
+  --text-main: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --scrollbar-track: #000000;
+  --scrollbar-thumb: #27272a;
+}
+
+[data-theme="white"] {
+  --bg-page: #f1f3f6;
+  --bg-surface: #ffffff;
+  --bg-subcontainer: #f6f8fa;
+  --bg-elevated: #ffffff;
+  --border-app: #e2e5e9;
+  --text-main: #1f2328;
+  --text-secondary: #57606a;
+  --text-muted: #6e7781;
+  --scrollbar-track: #f1f3f6;
+  --scrollbar-thumb: #cbd5e1;
+}
+
 @layer base {
   body {
-    background-color: #302e2b;
-    color: #e2e1e0;
+    background-color: var(--bg-page);
+    color: var(--text-main);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 }
 
@@ -17,26 +60,27 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #21201d;
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #454340;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5c5955;
+  filter: brightness(1.2);
 }
 
 /* Tactile 3D button utility in Chess.com style */
 .chess-btn-green {
   background-color: #81b64c;
   border-bottom: 3px solid #537a28;
-  color: #ffffff;
+  color: #ffffff !important;
   font-weight: 700;
   transition: all 0.1s ease;
 }
 .chess-btn-green:hover:not(:disabled) {
   background-color: #96bc4b;
+  color: #ffffff !important;
 }
 .chess-btn-green:active:not(:disabled) {
   transform: translateY(2px);
@@ -55,6 +99,236 @@
   color: #ffffff;
 }
 .chess-btn-secondary:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+}
+
+/* ==========================================================================
+   BLACK THEME (True OLED Pitch Black)
+   ========================================================================== */
+[data-theme="black"] {
+  background-color: #000000 !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="black"] body {
+  background-color: #000000 !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="black"] .bg-\[\#302e2b\] {
+  background-color: #000000 !important;
+}
+
+[data-theme="black"] .bg-\[\#262421\] {
+  background-color: #09090b !important;
+}
+
+[data-theme="black"] .bg-\[\#1e1c19\] {
+  background-color: #121215 !important;
+}
+
+[data-theme="black"] .bg-\[\#21201d\] {
+  background-color: #0d0d0f !important;
+}
+
+[data-theme="black"] .bg-\[\#1b1917\] {
+  background-color: #09090b !important;
+}
+
+[data-theme="black"] .bg-\[\#2b2926\] {
+  background-color: #18181b !important;
+}
+
+[data-theme="black"] .border-\[\#3d3b38\] {
+  border-color: #27272a !important;
+}
+
+[data-theme="black"] .border-\[\#2d2b28\] {
+  border-color: #18181b !important;
+}
+
+[data-theme="black"] .border-\[\#383632\] {
+  border-color: #27272a !important;
+}
+
+[data-theme="black"] .border-\[\#44423e\] {
+  border-color: #3f3f46 !important;
+}
+
+[data-theme="black"] .hover\:bg-\[\#302e2b\]:hover,
+[data-theme="black"] .hover\:bg-\[\#2c2a27\]:hover {
+  background-color: #141417 !important;
+}
+
+[data-theme="black"] .hover\:bg-\[\#3d3b38\]:hover {
+  background-color: #27272a !important;
+}
+
+[data-theme="black"] .hover\:bg-\[\#2b2926\]:hover {
+  background-color: #18181b !important;
+}
+
+[data-theme="black"] .chess-btn-secondary {
+  background-color: #18181b;
+  border-bottom: 3px solid #09090b;
+  color: #e4e4e7;
+}
+
+[data-theme="black"] .chess-btn-secondary:hover:not(:disabled) {
+  background-color: #27272a;
+  color: #ffffff;
+}
+
+[data-theme="black"] input,
+[data-theme="black"] textarea {
+  background-color: #121215 !important;
+  color: #ffffff !important;
+  border-color: #27272a !important;
+}
+
+[data-theme="black"] input::placeholder,
+[data-theme="black"] textarea::placeholder {
+  color: #71717a !important;
+}
+
+/* ==========================================================================
+   WHITE THEME (Clean Crisp Light)
+   ========================================================================== */
+[data-theme="white"] {
+  background-color: #f1f3f6 !important;
+  color: #1f2328 !important;
+}
+
+[data-theme="white"] body {
+  background-color: #f1f3f6 !important;
+  color: #1f2328 !important;
+}
+
+[data-theme="white"] .bg-\[\#302e2b\] {
+  background-color: #f1f3f6 !important;
+}
+
+[data-theme="white"] .bg-\[\#262421\] {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="white"] .bg-\[\#1e1c19\] {
+  background-color: #f6f8fa !important;
+}
+
+[data-theme="white"] .bg-\[\#21201d\] {
+  background-color: #ffffff !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="white"] .bg-\[\#1b1917\] {
+  background-color: #f0f2f5 !important;
+}
+
+[data-theme="white"] .bg-\[\#2b2926\] {
+  background-color: #e9ecef !important;
+}
+
+[data-theme="white"] .border-\[\#3d3b38\] {
+  border-color: #e2e5e9 !important;
+}
+
+[data-theme="white"] .border-\[\#2d2b28\] {
+  border-color: #eaedf1 !important;
+}
+
+[data-theme="white"] .border-\[\#383632\] {
+  border-color: #e2e5e9 !important;
+}
+
+[data-theme="white"] .border-\[\#44423e\] {
+  border-color: #d1d5db !important;
+}
+
+/* Typography in White theme */
+[data-theme="white"] .text-\[\#e2e1e0\] {
+  color: #1f2328 !important;
+}
+
+[data-theme="white"] .text-\[\#c3c2c1\] {
+  color: #24292f !important;
+}
+
+[data-theme="white"] .text-\[\#a09e9a\] {
+  color: #57606a !important;
+}
+
+[data-theme="white"] .text-\[\#8b8987\] {
+  color: #6e7781 !important;
+}
+
+/* Transform generic text-white to dark text in White Theme UNLESS inside buttons or preserved elements */
+[data-theme="white"] .text-white:not(.chess-btn-green):not(.chess-btn-green *):not(.keep-white):not(.keep-eval-white):not([data-keep-white]):not(.keep-eval-black) {
+  color: #0f172a !important;
+}
+
+/* Protected white text elements */
+[data-theme="white"] .chess-btn-green,
+[data-theme="white"] .chess-btn-green *,
+[data-theme="white"] .bg-\[\#81b64c\],
+[data-theme="white"] .bg-\[\#81b64c\] *,
+[data-theme="white"] .bg-\[\#ca3431\],
+[data-theme="white"] .bg-\[\#ca3431\] *,
+[data-theme="white"] .keep-white {
+  color: #ffffff !important;
+}
+
+[data-theme="white"] .keep-eval-black {
+  color: #ffffff !important;
+}
+
+[data-theme="white"] .keep-eval-white {
+  color: #000000 !important;
+}
+
+/* Inputs & textareas in White theme */
+[data-theme="white"] input,
+[data-theme="white"] textarea {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+
+[data-theme="white"] input::placeholder,
+[data-theme="white"] textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Hover states */
+[data-theme="white"] .hover\:bg-\[\#302e2b\]:hover,
+[data-theme="white"] .hover\:bg-\[\#2c2a27\]:hover,
+[data-theme="white"] .hover\:bg-\[\#2b2926\]:hover {
+  background-color: #edf0f4 !important;
+}
+
+[data-theme="white"] .hover\:bg-\[\#3d3b38\]:hover {
+  background-color: #e2e5e9 !important;
+}
+
+[data-theme="white"] .hover\:text-white:hover {
+  color: #000000 !important;
+}
+
+/* Secondary Button in White theme */
+[data-theme="white"] .chess-btn-secondary {
+  background-color: #f1f3f5;
+  border-bottom: 3px solid #d0d5dd;
+  color: #374151;
+}
+
+[data-theme="white"] .chess-btn-secondary:hover:not(:disabled) {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+[data-theme="white"] .chess-btn-secondary:active:not(:disabled) {
   transform: translateY(2px);
   border-bottom-width: 1px;
 }

@@ -15,6 +15,7 @@ import {
   Cpu,
 } from 'lucide-react';
 import { ChessKing, JudgmentBadgeIcon } from './ChessIcons';
+import { useTheme } from '../context/ThemeContext';
 import type { GameAnalysisReport, MoveEvaluation, MoveJudgment } from '../types/chess';
 
 interface AnalysisWorkbenchProps {
@@ -26,6 +27,7 @@ interface AnalysisWorkbenchProps {
 const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, onOpenEngineModal }) => {
+  const { theme } = useTheme();
   const [currentPlyIndex, setCurrentPlyIndex] = useState<number>(0);
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -367,10 +369,10 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                   style={{ height: `${whiteHeight}%` }}
                 />
                 <div className="absolute inset-0 flex flex-col justify-between items-center py-2 text-[10px] font-black font-mono select-none pointer-events-none">
-                  <span className="text-[#8b8987] drop-shadow">
+                  <span className="text-[#a09e9a] drop-shadow keep-eval-black">
                     {currentMove?.playerColor === 'black' ? currentMove.evalText : ''}
                   </span>
-                  <span className="text-[#262421] drop-shadow">
+                  <span className="text-[#262421] drop-shadow keep-eval-white">
                     {currentMove?.playerColor === 'white' ? currentMove.evalText : ''}
                   </span>
                 </div>
@@ -384,9 +386,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                     boardOrientation: boardOrientation,
                     arrows: getCustomArrows(),
                     squareStyles: getCustomSquareStyles(),
-                    // Official Chess.com Tournament Green & Cream Board
-                    darkSquareStyle: { backgroundColor: '#739552' },
-                    lightSquareStyle: { backgroundColor: '#ebecd0' },
+                    // Theme-adaptive Board Colors: Dark Slate for OLED Black, Tournament Green for Dark & White
+                    darkSquareStyle: { backgroundColor: theme === 'black' ? '#383e45' : '#739552' },
+                    lightSquareStyle: { backgroundColor: theme === 'black' ? '#8a939e' : '#ebecd0' },
                     animationDurationInMs: 180,
                     allowDragging: false,
                   }}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChessPawn } from './ChessIcons';
 import { FileText, Cpu, ChevronDown } from 'lucide-react';
+import { ThemeSwitcher } from './ThemeSwitcher';
 import type { EngineInfo } from '../types/chess';
 
 interface NavbarProps {
@@ -42,13 +43,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Engine selector & actions */}
-        <div className="flex items-center gap-3">
+        {/* Engine selector, Theme switcher & actions */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Clickable Engine Selector button */}
           <button
             onClick={onOpenEngineModal}
             title="Click to select open-source engine"
-            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-[#1e1c19] hover:bg-[#2c2a27] border border-[#3d3b38] hover:border-[#81b64c]/60 text-[#c3c2c1] shadow-inner transition cursor-pointer"
+            className="flex items-center gap-2 text-xs px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#1e1c19] hover:bg-[#2c2a27] border border-[#3d3b38] hover:border-[#81b64c]/60 text-[#c3c2c1] shadow-inner transition cursor-pointer"
           >
             <div className="relative">
               <Cpu className="w-3.5 h-3.5 text-[#81b64c]" />
@@ -61,18 +62,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="font-bold text-[11px] text-white">
               {activeEngine ? activeEngine.name : 'Stockfish 19'}
             </span>
-            <span className="text-[9px] font-mono bg-[#81b64c]/20 text-[#81b64c] px-1.5 py-0.5 rounded font-bold hidden sm:inline">
+            <span className="text-[9px] font-mono bg-[#81b64c]/20 text-[#81b64c] px-1.5 py-0.5 rounded font-bold hidden md:inline">
               {activeEngine ? activeEngine.rating : '3550+'}
             </span>
             <ChevronDown size={13} className="text-[#8b8987]" />
           </button>
 
+          {/* Theme Switcher (Dark, Black OLED, White) */}
+          <ThemeSwitcher />
+
           <button
             onClick={onOpenPgnModal}
-            className="chess-btn-secondary flex items-center gap-2 text-xs px-3.5 py-2 rounded-lg cursor-pointer"
+            className="chess-btn-secondary flex items-center gap-1.5 sm:gap-2 text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5 text-[#81b64c]" />
-            <span>Paste PGN</span>
+            <span className="hidden sm:inline">Paste PGN</span>
+            <span className="sm:hidden">PGN</span>
           </button>
         </div>
       </div>
