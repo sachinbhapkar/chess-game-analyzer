@@ -56,6 +56,12 @@ public class GameAnalysisReport {
     private double whiteAcpl;
     private double blackAcpl;
 
+    // Engine Information
+    private String engineId;
+    private String engineName;
+    private String engineType;
+    private String engineRating;
+
     // Move-by-move evaluations
     private List<MoveEvaluation> moves;
 }

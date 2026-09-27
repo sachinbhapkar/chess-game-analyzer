@@ -32,7 +32,8 @@ public class AnalysisController {
         GameAnalysisReport report = gameAnalyzerService.analyzePgn(
                 request.getPgn(),
                 request.getDepth(),
-                request.getMovetimeMs()
+                request.getMovetimeMs(),
+                request.getEngineId()
         );
         return ResponseEntity.ok(report);
     }

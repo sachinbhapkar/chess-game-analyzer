@@ -12,6 +12,7 @@ import {
   Layers,
   Flag,
   Award,
+  Cpu,
 } from 'lucide-react';
 import { ChessKing, JudgmentBadgeIcon } from './ChessIcons';
 import type { GameAnalysisReport, MoveEvaluation, MoveJudgment } from '../types/chess';
@@ -19,11 +20,12 @@ import type { GameAnalysisReport, MoveEvaluation, MoveJudgment } from '../types/
 interface AnalysisWorkbenchProps {
   report: GameAnalysisReport;
   onClose?: () => void;
+  onOpenEngineModal?: () => void;
 }
 
 const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
-export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report }) => {
+export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, onOpenEngineModal }) => {
   const [currentPlyIndex, setCurrentPlyIndex] = useState<number>(0);
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -296,11 +298,27 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report }) 
             <Award size={18} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base font-bold text-white tracking-tight">Game Review</h2>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#1e1c19] text-[#e69d00] border border-[#3d3b38]">
                 {report.result}
               </span>
+              {onOpenEngineModal ? (
+                <button
+                  onClick={onOpenEngineModal}
+                  title="Engine used for evaluation (click to change)"
+                  className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#81b64c]/15 text-[#81b64c] border border-[#81b64c]/30 hover:bg-[#81b64c]/25 transition flex items-center gap-1 cursor-pointer"
+                >
+                  <Cpu size={12} />
+                  <span>{report.engineName || 'Stockfish 19'}</span>
+                  <span className="text-[#a09e9a] font-normal hidden sm:inline">({report.engineRating || '3550+'})</span>
+                </button>
+              ) : (
+                <div className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#81b64c]/15 text-[#81b64c] border border-[#81b64c]/30 flex items-center gap-1">
+                  <Cpu size={12} />
+                  <span>{report.engineName || 'Stockfish 19'}</span>
+                </div>
+              )}
             </div>
             <p className="text-xs text-[#a09e9a] font-medium">{report.opening}</p>
           </div>

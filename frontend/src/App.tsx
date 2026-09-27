@@ -4,15 +4,28 @@ import { PlayerSearch } from './components/PlayerSearch';
 import { GameList } from './components/GameList';
 import { AnalysisWorkbench } from './components/AnalysisWorkbench';
 import { PgnModal } from './components/PgnModal';
+import { EngineSelectorModal } from './components/EngineSelectorModal';
 import { ChessKing, ChessKnight } from './components/ChessIcons';
-import type { GameAnalysisReport, GameSummary, PlayerProfile } from './types/chess';
-import { analyzeGamePgn, checkBackendHealth, fetchPlayerProfile, fetchRecentGames } from './services/api';
+import type { EngineInfo, GameAnalysisReport, GameSummary, PlayerProfile } from './types/chess';
+import {
+  analyzeGamePgn,
+  checkBackendHealth,
+  fetchEngines,
+  fetchPlayerProfile,
+  fetchRecentGames,
+} from './services/api';
 import { AlertCircle, Sparkles, Loader2 } from 'lucide-react';
 
 export function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [currentReport, setCurrentReport] = useState<GameAnalysisReport | null>(null);
+
+  const [engines, setEngines] = useState<EngineInfo[]>([]);
+  const [selectedEngineId, setSelectedEngineId] = useState<string>(() => {
+    return localStorage.getItem('selected_chess_engine') || 'stockfish';
+  });
+  const [isEngineModalOpen, setIsEngineModalOpen] = useState(false);
 
   const [loadingPlayer, setLoadingPlayer] = useState(false);
   const [analyzingGameId, setAnalyzingGameId] = useState<string | null>(null);
@@ -22,8 +35,18 @@ export function App() {
 
   const workbenchRef = useRef<HTMLDivElement>(null);
 
-  // Check backend & Stockfish health on mount
+  const loadEngines = async () => {
+    try {
+      const data = await fetchEngines();
+      setEngines(data);
+    } catch {
+      // Fallback
+    }
+  };
+
+  // Check backend & engines health on mount
   useEffect(() => {
+    loadEngines();
     checkBackendHealth()
       .then((data) => {
         if (data.status === 'UP') {
@@ -34,6 +57,19 @@ export function App() {
         setStockfishReady(false);
       });
   }, []);
+
+  const activeEngine = engines.find((e) => e.id === selectedEngineId) || engines[0] || null;
+
+  const handleSelectEngine = async (engineId: string) => {
+    setSelectedEngineId(engineId);
+    localStorage.setItem('selected_chess_engine', engineId);
+    setIsEngineModalOpen(false);
+
+    // If an analysis report is already open, seamlessly re-analyze it with the newly chosen engine
+    if (currentReport?.pgn) {
+      await handleAnalyzeCustomPgn(currentReport.pgn, engineId);
+    }
+  };
 
   // Handle Player Search
   const handlePlayerSearch = async (username: string) => {
@@ -64,26 +100,26 @@ export function App() {
     setErrorMessage(null);
 
     try {
-      // Depth 10 with 0ms artificial sleep = 0.5-1.5s total time for 60-move game!
-      const report = await analyzeGamePgn(game.pgn, 10, 0);
+      const report = await analyzeGamePgn(game.pgn, 10, 0, selectedEngineId);
       setCurrentReport(report);
       setTimeout(() => {
         workbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Analysis failed. Check if Stockfish backend is running.');
+      setErrorMessage(err.message || 'Analysis failed. Check if engine backend is running.');
     } finally {
       setAnalyzingGameId(null);
     }
   };
 
   // Handle Custom PGN Analysis
-  const handleAnalyzeCustomPgn = async (pgn: string) => {
+  const handleAnalyzeCustomPgn = async (pgn: string, engineToUse?: string) => {
+    const engine = engineToUse || selectedEngineId;
     setAnalyzingGameId('custom');
     setErrorMessage(null);
 
     try {
-      const report = await analyzeGamePgn(pgn, 10, 0);
+      const report = await analyzeGamePgn(pgn, 10, 0, engine);
       setCurrentReport(report);
       setIsPgnModalOpen(false);
       setTimeout(() => {
@@ -101,6 +137,8 @@ export function App() {
       <Navbar
         onOpenPgnModal={() => setIsPgnModalOpen(true)}
         stockfishReady={stockfishReady}
+        activeEngine={activeEngine}
+        onOpenEngineModal={() => setIsEngineModalOpen(true)}
       />
 
       <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
@@ -130,7 +168,10 @@ export function App() {
         {/* Game Analysis Workbench if a game has been analyzed */}
         {currentReport && (
           <div ref={workbenchRef} className="mb-8 animate-in fade-in duration-200 scroll-mt-20">
-            <AnalysisWorkbench report={currentReport} />
+            <AnalysisWorkbench
+              report={currentReport}
+              onOpenEngineModal={() => setIsEngineModalOpen(true)}
+            />
           </div>
         )}
 
@@ -156,7 +197,7 @@ export function App() {
             </h3>
             <p className="text-xs text-[#a09e9a] mb-6 leading-relaxed">
               Search any Chess.com username above to browse your games, review accuracy, detect blunders,
-              and see engine best moves right on the board.
+              and see engine best moves right on the board with your choice of open-source engine.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -189,7 +230,7 @@ export function App() {
             </div>
             <h3 className="text-base font-bold text-white mb-1">Running Game Review</h3>
             <p className="text-xs text-[#a09e9a] mb-5 leading-relaxed">
-              Stockfish 19 is evaluating all moves, finding blunders, and computing accuracy...
+              {activeEngine ? activeEngine.name : 'Stockfish 19'} is evaluating all moves, finding blunders, and computing accuracy...
             </p>
             <div className="w-full bg-[#1e1c19] h-2 rounded-full overflow-hidden border border-[#3d3b38]">
               <div className="h-full bg-[#81b64c] rounded-full animate-pulse w-full" />
@@ -202,8 +243,18 @@ export function App() {
       <PgnModal
         isOpen={isPgnModalOpen}
         onClose={() => setIsPgnModalOpen(false)}
-        onAnalyze={handleAnalyzeCustomPgn}
+        onAnalyze={(pgn) => handleAnalyzeCustomPgn(pgn)}
         loading={analyzingGameId === 'custom'}
+      />
+
+      {/* Open-Source Engine Selection Modal */}
+      <EngineSelectorModal
+        isOpen={isEngineModalOpen}
+        onClose={() => setIsEngineModalOpen(false)}
+        engines={engines}
+        selectedEngineId={selectedEngineId}
+        onSelectEngine={handleSelectEngine}
+        onRefreshEngines={loadEngines}
       />
     </div>
   );

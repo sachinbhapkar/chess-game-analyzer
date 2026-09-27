@@ -29,6 +29,10 @@ public class GameAnalyzerService {
     private static final Pattern RESULT_PATTERN = Pattern.compile("(1-0|0-1|1/2-1/2|\\*)\\s*$");
 
     public GameAnalysisReport analyzePgn(String pgn, Integer requestedDepth, Integer requestedMovetime) {
+        return analyzePgn(pgn, requestedDepth, requestedMovetime, null);
+    }
+
+    public GameAnalysisReport analyzePgn(String pgn, Integer requestedDepth, Integer requestedMovetime, String engineId) {
         int depth = requestedDepth != null && requestedDepth > 0 ? requestedDepth : stockfishService.getDefaultDepth();
         int movetime = requestedMovetime != null && requestedMovetime > 0 ? requestedMovetime : stockfishService.getDefaultMovetimeMs();
 
@@ -80,7 +84,9 @@ public class GameAnalyzerService {
         double whiteTotalCpl = 0.0;
         double blackTotalCpl = 0.0;
 
-        try (StockfishService.StockfishSession session = stockfishService.createSession()) {
+        com.chess.analyzer.model.EngineInfo usedEngine = null;
+        try (StockfishService.StockfishSession session = stockfishService.createSession(engineId)) {
+            usedEngine = session.getEngine();
             // Initial position evaluation
             String currentFen = board.getFen();
             StockfishService.EvaluationResult lastEval = session.evaluateFen(currentFen, depth, movetime);
@@ -282,6 +288,10 @@ public class GameAnalyzerService {
                 .blackBlunders(blackBlunder)
                 .whiteAcpl(Math.round(whiteAcpl * 10.0) / 10.0)
                 .blackAcpl(Math.round(blackAcpl * 10.0) / 10.0)
+                .engineId(usedEngine != null ? usedEngine.getId() : "stockfish")
+                .engineName(usedEngine != null ? usedEngine.getName() : "Stockfish 19")
+                .engineType(usedEngine != null ? usedEngine.getType() : "NNUE")
+                .engineRating(usedEngine != null ? usedEngine.getRating() : "3550+ ELO")
                 .moves(evaluations)
                 .build();
     }
@@ -342,7 +352,7 @@ public class GameAnalyzerService {
             case INACCURACY -> "Inaccuracy (-" + String.format("%.1f", loss) + "% win chance). Best was " + bestMoveUci;
             case MISTAKE -> "Mistake (-" + String.format("%.1f", loss) + "% win chance). The engine preferred " + bestMoveUci;
             case MISSED_WIN -> "Missed Win! You had a decisive winning advantage. Engine recommends " + bestMoveUci;
-            case BLUNDER -> "Blunder! Lost " + String.format("%.1f", loss) + "% win chance. Stockfish found " + bestMoveUci;
+            case BLUNDER -> "Blunder! Lost " + String.format("%.1f", loss) + "% win chance. The engine found " + bestMoveUci;
         };
     }
 }

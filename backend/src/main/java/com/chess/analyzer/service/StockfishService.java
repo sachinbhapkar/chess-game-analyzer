@@ -1,5 +1,7 @@
 package com.chess.analyzer.service;
 
+import com.chess.analyzer.model.EngineInfo;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,15 +18,18 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class StockfishService {
+
+    private final EngineRegistryService engineRegistryService;
 
     @Value("${stockfish.path:/opt/homebrew/bin/stockfish}")
     private String configuredPath;
 
-    @Value("${stockfish.depth:12}")
+    @Value("${stockfish.depth:10}")
     private int defaultDepth;
 
-    @Value("${stockfish.movetime-ms:150}")
+    @Value("${stockfish.movetime-ms:0}")
     private int defaultMovetimeMs;
 
     private static final Pattern SCORE_CP_PATTERN = Pattern.compile("score cp (-?\\d+)");
@@ -32,6 +37,11 @@ public class StockfishService {
     private static final Pattern BEST_MOVE_PATTERN = Pattern.compile("^bestmove\\s+([a-h][1-8][a-h][1-8][qrbn]?)");
 
     public String resolveStockfishBinary() {
+        EngineInfo defaultEngine = engineRegistryService.getDefaultEngine();
+        if (defaultEngine != null && defaultEngine.getBinaryPath() != null) {
+            return defaultEngine.getBinaryPath();
+        }
+
         String[] candidates = {
                 configuredPath,
                 "/opt/homebrew/bin/stockfish",
@@ -85,15 +95,23 @@ public class StockfishService {
     }
 
     /**
-     * Session-based Stockfish worker for evaluating moves sequentially with high performance.
+     * Session-based UCI worker for evaluating moves sequentially with high performance
+     * across open-source chess engines (Stockfish, Lc0, Fairy-Stockfish, etc.).
      */
     public class StockfishSession implements AutoCloseable {
+        private final EngineInfo engine;
         private final Process process;
         private final BufferedReader reader;
         private final PrintWriter writer;
 
-        public StockfishSession() throws Exception {
-            String binaryPath = resolveStockfishBinary();
+        public StockfishSession(EngineInfo engineInfo) throws Exception {
+            this.engine = engineInfo != null ? engineInfo : engineRegistryService.getDefaultEngine();
+            String binaryPath = this.engine != null && this.engine.getBinaryPath() != null
+                    ? this.engine.getBinaryPath()
+                    : resolveStockfishBinary();
+
+            log.info("Launching chess engine session: {} at {}", this.engine != null ? this.engine.getName() : "Stockfish", binaryPath);
+
             ProcessBuilder pb = new ProcessBuilder(binaryPath);
             pb.redirectErrorStream(true);
             this.process = pb.start();
@@ -101,12 +119,16 @@ public class StockfishService {
             this.writer = new PrintWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8), true);
 
             sendCommand("uci");
-            waitFor("uciok", 3000);
+            waitFor("uciok", 5000);
             sendCommand("isready");
-            waitFor("readyok", 3000);
+            waitFor("readyok", 10000);
             sendCommand("ucinewgame");
             sendCommand("isready");
-            waitFor("readyok", 3000);
+            waitFor("readyok", 5000);
+        }
+
+        public EngineInfo getEngine() {
+            return engine;
         }
 
         public void sendCommand(String cmd) {
@@ -131,11 +153,20 @@ public class StockfishService {
         public EvaluationResult evaluateFen(String fen, int depth, int movetimeMs) {
             try {
                 sendCommand("position fen " + fen);
-                int targetDepth = depth > 0 ? depth : defaultDepth;
-                if (movetimeMs > 0) {
-                    sendCommand("go depth " + targetDepth + " movetime " + movetimeMs);
+
+                // Customize search parameters by engine characteristics
+                if (engine != null && "lc0".equalsIgnoreCase(engine.getId())) {
+                    // Leela Chess Zero uses deep neural networks where each node is an evaluation.
+                    // Nodes 30-50 provides GM-level positional evaluation in ~0.5s per move.
+                    int targetNodes = depth > 0 ? Math.min(depth * 5, 50) : 30;
+                    sendCommand("go nodes " + targetNodes);
                 } else {
-                    sendCommand("go depth " + targetDepth);
+                    int targetDepth = depth > 0 ? depth : (engine != null ? engine.getDefaultDepth() : defaultDepth);
+                    if (movetimeMs > 0) {
+                        sendCommand("go depth " + targetDepth + " movetime " + movetimeMs);
+                    } else {
+                        sendCommand("go depth " + targetDepth);
+                    }
                 }
 
                 Integer lastCp = null;
@@ -178,7 +209,7 @@ public class StockfishService {
                     }
                 }
 
-                // Stockfish gives score relative to side to move. Normalize to White perspective.
+                // UCI engines output scores from perspective of the side to move. Normalize to White perspective.
                 Double scoreInPawns = null;
                 Integer normalizedMate = null;
 
@@ -211,7 +242,16 @@ public class StockfishService {
     }
 
     public StockfishSession createSession() throws Exception {
-        return new StockfishSession();
+        return createSession((String) null);
+    }
+
+    public StockfishSession createSession(String engineId) throws Exception {
+        EngineInfo engine = engineRegistryService.getEngine(engineId);
+        return new StockfishSession(engine);
+    }
+
+    public StockfishSession createSession(EngineInfo engine) throws Exception {
+        return new StockfishSession(engine);
     }
 
     public int getDefaultDepth() {

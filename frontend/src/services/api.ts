@@ -1,4 +1,4 @@
-import type { GameAnalysisReport, GameSummary, PlayerProfile, PlayerSuggestion } from '../types/chess';
+import type { EngineInfo, GameAnalysisReport, GameSummary, PlayerProfile, PlayerSuggestion } from '../types/chess';
 
 const API_BASE = '/api';
 
@@ -30,17 +30,30 @@ export async function fetchRecentGames(username: string, limit = 15): Promise<Ga
   return res.json();
 }
 
+export async function fetchEngines(): Promise<EngineInfo[]> {
+  try {
+    const res = await fetch(`${API_BASE}/engines`);
+    if (!res.ok) {
+      return [];
+    }
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
 export async function analyzeGamePgn(
   pgn: string,
   depth = 10,
-  movetimeMs = 0
+  movetimeMs = 0,
+  engineId?: string
 ): Promise<GameAnalysisReport> {
   const res = await fetch(`${API_BASE}/analysis/pgn`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ pgn, depth, movetimeMs }),
+    body: JSON.stringify({ pgn, depth, movetimeMs, engineId }),
   });
 
   if (!res.ok) {

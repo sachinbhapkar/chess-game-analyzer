@@ -15,4 +15,5 @@ public class AnalysisRequest {
     private Integer depth;
     private Integer movetimeMs;
     private String playerPerspective; // optional, e.g. username to focus on
+    private String engineId; // optional, e.g. "stockfish", "lc0", "fairy-stockfish"
 }

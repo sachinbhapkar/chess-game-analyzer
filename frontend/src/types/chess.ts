@@ -78,7 +78,32 @@ export interface GameAnalysisReport {
 
   whiteAcpl: number;
   blackAcpl: number;
+
+  // Engine used for this analysis
+  engineId?: string;
+  engineName?: string;
+  engineType?: string;
+  engineRating?: string;
+
   moves: MoveEvaluation[];
+}
+
+export interface EngineInfo {
+  id: string;
+  name: string;
+  version?: string;
+  tagline: string;
+  description: string;
+  author: string;
+  type: string;
+  rating: string;
+  available: boolean;
+  binaryPath?: string | null;
+  installCommand?: string;
+  projectUrl?: string;
+  defaultDepth: number;
+  defaultMovetimeMs: number;
+  default?: boolean;
 }
 
 export interface PlayerProfile {
