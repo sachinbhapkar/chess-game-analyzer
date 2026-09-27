@@ -244,17 +244,25 @@ export function App() {
 
       {/* Loading Evaluation Modal Overlay */}
       {analyzingGameId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-[#262421] border border-[#3d3b38] rounded-2xl p-7 max-w-sm w-full text-center shadow-2xl flex flex-col items-center">
-            <div className="w-14 h-14 rounded-2xl bg-[#81b64c]/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c] mb-4">
-              <Loader2 size={30} className="animate-spin text-[#81b64c]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="bg-[#262421]/95 backdrop-blur-2xl border border-[#81b64c]/40 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl shadow-black/80 flex flex-col items-center relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 via-[#81b64c] to-lime-400" />
+            <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xl shadow-emerald-950/60 border border-[#81b64c]/40 mb-4 bg-[#1e1c19] p-0.5 relative group">
+              <img
+                src="/icons/brand-logo.jpg"
+                alt="Analyzing"
+                className="w-full h-full object-cover rounded-xl"
+              />
+              <div className="absolute inset-0 bg-black/30 rounded-xl flex items-center justify-center">
+                <Loader2 size={26} className="animate-spin text-white drop-shadow" />
+              </div>
             </div>
-            <h3 className="text-base font-bold text-white mb-1">Running Game Review</h3>
-            <p className="text-xs text-[#a09e9a] mb-5 leading-relaxed">
+            <h3 className="text-lg font-black text-white mb-1.5 tracking-tight">Running Game Review</h3>
+            <p className="text-xs text-[#a09e9a] mb-5 leading-relaxed font-medium">
               {activeEngine ? activeEngine.name : 'Stockfish 19'} is evaluating all moves, finding blunders, and computing accuracy...
             </p>
-            <div className="w-full bg-[#1e1c19] h-2 rounded-full overflow-hidden border border-[#3d3b38]">
-              <div className="h-full bg-[#81b64c] rounded-full animate-pulse w-full" />
+            <div className="w-full bg-[#1e1c19] h-2.5 rounded-full overflow-hidden border border-[#3d3b38] p-0.5">
+              <div className="h-full bg-gradient-to-r from-emerald-500 to-[#81b64c] rounded-full animate-pulse w-full shadow-[0_0_10px_rgba(129,182,76,0.6)]" />
             </div>
           </div>
         </div>

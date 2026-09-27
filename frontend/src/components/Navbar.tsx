@@ -1,5 +1,4 @@
 import React from 'react';
-import { ChessPawn } from './ChessIcons';
 import { FileText, Cpu, ChevronDown } from 'lucide-react';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import type { EngineInfo } from '../types/chess';
@@ -18,12 +17,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenEngineModal,
 }) => {
   return (
-    <header className="border-b border-[#3d3b38] bg-[#262421] sticky top-0 z-40 transition-colors shadow-md">
+    <header className="border-b border-[#3d3b38] bg-[#262421]/90 backdrop-blur-xl sticky top-0 z-40 transition-colors shadow-xl">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Brand identity */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#81b64c] flex items-center justify-center shadow text-white">
-            <ChessPawn size={24} className="text-white drop-shadow" />
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl overflow-hidden shadow-lg shadow-black/50 border border-[#81b64c]/40 shrink-0 bg-[#1e1c19] p-0.5 hover:scale-105 transition-transform duration-200">
+            <img
+              src="/icons/brand-logo.jpg"
+              alt="Chess Game Review"
+              className="w-full h-full object-cover rounded-[10px]"
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -33,7 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={onOpenEngineModal}
                 title="Click to switch chess engine"
-                className="text-[10px] tracking-wider uppercase font-black px-2 py-0.5 rounded bg-[#81b64c]/20 text-[#81b64c] border border-[#81b64c]/30 hover:bg-[#81b64c]/30 transition cursor-pointer flex items-center gap-1"
+                className="text-[10px] tracking-wider uppercase font-black px-2 py-0.5 rounded-md bg-[#81b64c]/20 text-[#81b64c] border border-[#81b64c]/30 hover:bg-[#81b64c]/30 hover:border-[#81b64c]/50 transition cursor-pointer flex items-center gap-1 shadow-sm"
               >
                 <span>{activeEngine ? activeEngine.name : 'STOCKFISH 19'}</span>
                 <ChevronDown size={11} />

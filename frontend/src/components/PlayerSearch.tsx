@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Clock, Zap, Shield, History, X, ChevronRight, Loader2 } from 'lucide-react';
-import { ChessPawn } from './ChessIcons';
 import type { PlayerProfile, PlayerSuggestion } from '../types/chess';
 import { fetchPlayerSuggestions } from '../services/api';
 
@@ -151,9 +150,13 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
       <div className="absolute top-0 right-1/4 w-96 h-20 bg-gradient-to-b from-[#81b64c]/10 to-transparent blur-2xl pointer-events-none" />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#81b64c]/30 to-emerald-400/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c] shadow-md shadow-emerald-500/10">
-            <ChessPawn size={24} />
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-black/40 border border-[#81b64c]/40 shrink-0 bg-[#1e1c19] p-0.5 hover:scale-105 transition-transform duration-200">
+            <img
+              src="/icons/player-review.jpg"
+              alt="Player Game Review"
+              className="w-full h-full object-cover rounded-[10px]"
+            />
           </div>
           <div>
             <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
