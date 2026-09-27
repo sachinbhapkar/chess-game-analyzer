@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Chessboard } from 'react-chessboard';
+import { Chess } from 'chess.js';
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,6 +14,9 @@ import {
   Flag,
   Award,
   Cpu,
+  Sparkles,
+  Eye,
+  Check,
 } from 'lucide-react';
 import { JudgmentBadgeIcon } from './ChessIcons';
 import { useTheme } from '../context/ThemeContext';
@@ -31,6 +35,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
   const [currentPlyIndex, setCurrentPlyIndex] = useState<number>(0);
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'played' | 'best' | 'best_preview'>('played');
   const activeMoveRef = useRef<HTMLDivElement | null>(null);
   const notationContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,7 +43,46 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
   const currentMove: MoveEvaluation | null =
     currentPlyIndex >= 0 && currentPlyIndex < totalMoves ? report.moves[currentPlyIndex] : null;
 
-  const currentFen = currentPlyIndex === -1 ? STARTING_FEN : (currentMove?.fenAfter || STARTING_FEN);
+  // Reset view mode to 'played' whenever ply index changes
+  useEffect(() => {
+    setViewMode('played');
+  }, [currentPlyIndex]);
+
+  // Compute best move in standard algebraic notation (SAN) and resulting board state
+  const bestMoveInfo = useMemo(() => {
+    if (!currentMove || !currentMove.bestMoveUci || currentMove.bestMoveUci.length < 4) {
+      return null;
+    }
+    try {
+      const chess = new Chess(currentMove.fenBefore);
+      const from = currentMove.bestMoveUci.substring(0, 2);
+      const to = currentMove.bestMoveUci.substring(2, 4);
+      const promotion = currentMove.bestMoveUci.length > 4 ? currentMove.bestMoveUci[4] : undefined;
+      const res = chess.move({ from, to, promotion });
+      if (!res) return null;
+      return {
+        san: res.san,
+        from,
+        to,
+        piece: res.piece,
+        fenAfterBest: chess.fen(),
+        captured: res.captured,
+      };
+    } catch {
+      return null;
+    }
+  }, [currentMove]);
+
+  // In 'best' mode, board reverts to fenBefore so user sees the glowing arrow of what should have been played.
+  // In 'best_preview' mode, board shows fenAfterBest so user sees the resulting position.
+  const currentFen =
+    currentPlyIndex === -1
+      ? STARTING_FEN
+      : viewMode === 'best'
+      ? (currentMove?.fenBefore || STARTING_FEN)
+      : viewMode === 'best_preview'
+      ? (bestMoveInfo?.fenAfterBest || currentMove?.fenAfter || STARTING_FEN)
+      : (currentMove?.fenAfter || STARTING_FEN);
 
   // Auto-play timer
   useEffect(() => {
@@ -146,20 +190,54 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
     setBoardOrientation((prev) => (prev === 'white' ? 'black' : 'white'));
   };
 
-  // Convert bestMoveUci into an engine recommendation arrow
+  // Convert bestMoveUci or played move into board recommendation arrows
   const getCustomArrows = () => {
     if (!currentMove) return [];
 
     const arrows: { startSquare: string; endSquare: string; color: string }[] = [];
-    if (currentMove.bestMoveUci && currentMove.bestMoveUci.length >= 4) {
-      const from = currentMove.bestMoveUci.substring(0, 2);
-      const to = currentMove.bestMoveUci.substring(2, 4);
-      arrows.push({
-        startSquare: from,
-        endSquare: to,
-        color: 'rgba(129, 182, 76, 0.9)', // Chess.com green arrow
-      });
+
+    if (viewMode === 'best') {
+      // In Best Move mode, show glowing green engine recommendation arrow
+      if (bestMoveInfo) {
+        arrows.push({
+          startSquare: bestMoveInfo.from,
+          endSquare: bestMoveInfo.to,
+          color: 'rgba(129, 182, 76, 0.95)', // Chess.com green arrow
+        });
+      }
+    } else if (viewMode === 'played') {
+      // In Played mode, if it's best or brilliant, show green arrow
+      if (currentMove.judgment === 'BEST' || currentMove.judgment === 'BRILLIANT') {
+        if (currentMove.fromSquare && currentMove.toSquare) {
+          arrows.push({
+            startSquare: currentMove.fromSquare,
+            endSquare: currentMove.toSquare,
+            color: 'rgba(129, 182, 76, 0.9)',
+          });
+        }
+      } else if (currentMove.judgment === 'BLUNDER') {
+        if (currentMove.fromSquare && currentMove.toSquare) {
+          arrows.push({
+            startSquare: currentMove.fromSquare,
+            endSquare: currentMove.toSquare,
+            color: 'rgba(220, 38, 38, 0.85)', // Red arrow for blunder
+          });
+        }
+      } else if (
+        currentMove.judgment === 'MISTAKE' ||
+        currentMove.judgment === 'INACCURACY' ||
+        currentMove.judgment === 'MISSED_WIN'
+      ) {
+        if (currentMove.fromSquare && currentMove.toSquare) {
+          arrows.push({
+            startSquare: currentMove.fromSquare,
+            endSquare: currentMove.toSquare,
+            color: 'rgba(234, 88, 12, 0.85)', // Orange arrow for mistake
+          });
+        }
+      }
     }
+
     return arrows;
   };
 
@@ -167,6 +245,18 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
   const getCustomSquareStyles = () => {
     if (!currentMove) return {};
     const styles: Record<string, React.CSSProperties> = {};
+
+    if (viewMode === 'best' && bestMoveInfo) {
+      styles[bestMoveInfo.from] = { backgroundColor: 'rgba(129, 182, 76, 0.35)' };
+      styles[bestMoveInfo.to] = { backgroundColor: 'rgba(129, 182, 76, 0.55)' };
+      return styles;
+    }
+
+    if (viewMode === 'best_preview' && bestMoveInfo) {
+      styles[bestMoveInfo.from] = { backgroundColor: 'rgba(129, 182, 76, 0.25)' };
+      styles[bestMoveInfo.to] = { backgroundColor: 'rgba(129, 182, 76, 0.5)' };
+      return styles;
+    }
 
     let tintColor = 'rgba(240, 193, 92, 0.4)'; // default yellow highlight
     if (currentMove.judgment === 'BLUNDER') {
@@ -209,6 +299,14 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
   // Evaluation bar height (50% is equal, 100% is white crushing, 0% is black crushing)
   const calculateWhitePercentage = () => {
     if (!currentMove) return 50;
+    if (viewMode === 'best' && currentMove.bestEvalScore != null) {
+      if (currentMove.bestMateIn != null) {
+        return currentMove.bestMateIn > 0 ? 100 : 0;
+      }
+      const score = currentMove.bestEvalScore;
+      const clamped = Math.max(-6, Math.min(6, score));
+      return 50 + (clamped / 6) * 45;
+    }
     if (currentMove.mateIn != null) {
       return currentMove.mateIn > 0 ? 100 : 0;
     }
@@ -273,7 +371,17 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
     }
   };
 
-  const badgePos = currentMove?.toSquare ? getBadgePosition(currentMove.toSquare) : null;
+  const badgeTargetSquare =
+    viewMode === 'best' || viewMode === 'best_preview'
+      ? bestMoveInfo?.to
+      : currentMove?.toSquare;
+
+  const badgePos = badgeTargetSquare ? getBadgePosition(badgeTargetSquare) : null;
+
+  const activeBadgeType: MoveJudgment =
+    viewMode === 'best' || viewMode === 'best_preview'
+      ? 'BEST'
+      : (currentMove?.judgment || 'BOOK');
 
   // Coach summary text based on overall game stats
   const getCoachSummary = () => {
@@ -387,6 +495,58 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
               </div>
             </div>
 
+            {/* Best Move Interactive Banner */}
+            {viewMode === 'best' && bestMoveInfo && (
+              <div className="bg-emerald-500/15 border border-emerald-500/40 px-3.5 py-2 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-150 shadow-md">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                  <Sparkles size={15} />
+                  <span>
+                    Showing Best Move: <strong className="text-white font-mono text-sm">{bestMoveInfo.san}</strong> (instead of {currentMove?.san})
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setViewMode('best_preview')}
+                    className="px-2.5 py-1 rounded-lg bg-[#81b64c] text-white font-bold hover:bg-[#96bc4b] transition cursor-pointer text-[11px] keep-white shadow-sm flex items-center gap-1"
+                  >
+                    <span>Play Move</span>
+                    <Play size={10} className="fill-white" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('played')}
+                    className="px-2.5 py-1 rounded-lg bg-[#1e1c19] text-[#a09e9a] hover:text-white border border-[#3d3b38] hover:border-slate-400 transition cursor-pointer text-[11px]"
+                  >
+                    Show Played ↩
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {viewMode === 'best_preview' && bestMoveInfo && (
+              <div className="bg-[#81b64c]/20 border border-[#81b64c]/50 px-3.5 py-2 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-150 shadow-md">
+                <div className="flex items-center gap-2 text-white font-bold">
+                  <Check size={15} className="text-[#81b64c]" />
+                  <span>
+                    Position after Best Move: <strong className="text-[#81b64c] font-mono text-sm">{bestMoveInfo.san}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setViewMode('best')}
+                    className="px-2.5 py-1 rounded-lg bg-[#1e1c19] text-white border border-[#3d3b38] hover:bg-[#2c2a27] transition cursor-pointer text-[11px]"
+                  >
+                    Show Arrow ◀
+                  </button>
+                  <button
+                    onClick={() => setViewMode('played')}
+                    className="px-2.5 py-1 rounded-lg bg-[#1e1c19] text-[#a09e9a] hover:text-white border border-[#3d3b38] transition cursor-pointer text-[11px]"
+                  >
+                    Show Played ↩
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Chessboard + Vertical Eval Bar */}
             <div className="flex gap-2.5 w-full">
               {/* Smooth Chess.com Evaluation Bar */}
@@ -422,7 +582,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 />
 
                 {/* Floating Move Classification Badge Directly on the Square */}
-                {currentMove && badgePos && (
+                {badgePos && (
                   <div
                     className="absolute pointer-events-none z-20 flex items-start justify-end p-1 transition-all duration-150 ease-out"
                     style={{
@@ -433,7 +593,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                     }}
                   >
                     <div className="transform -translate-y-1 translate-x-1 filter drop-shadow-xl scale-125 animate-in zoom-in-75 duration-150">
-                      <JudgmentBadgeIcon type={currentMove.judgment} size={28} />
+                      <JudgmentBadgeIcon type={activeBadgeType} size={28} />
                     </div>
                   </div>
                 )}
@@ -626,27 +786,109 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
 
             {currentMove ? (
               <div className="space-y-3">
+                {/* Played vs Best Move Interactive Comparison Card */}
+                {bestMoveInfo && currentMove.judgment !== 'BEST' && currentMove.judgment !== 'BRILLIANT' && (
+                  <div className="bg-[#1e1c19] p-2 rounded-xl border border-[#3d3b38] space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* You Played Button */}
+                      <button
+                        onClick={() => setViewMode('played')}
+                        className={`p-2.5 rounded-lg text-left transition cursor-pointer flex items-center justify-between border ${
+                          viewMode === 'played'
+                            ? 'bg-rose-500/10 border-rose-500/50 shadow-sm'
+                            : 'bg-[#262421] border-[#3d3b38] hover:border-slate-500'
+                        }`}
+                      >
+                        <div>
+                          <span className="text-[10px] text-[#8b8987] uppercase font-bold block">You Played</span>
+                          <span className="font-mono text-base font-black text-white">{currentMove.san}</span>
+                        </div>
+                        <JudgmentBadgeIcon type={currentMove.judgment} size={22} />
+                      </button>
+
+                      {/* Best Move Button */}
+                      <button
+                        onClick={() => setViewMode(viewMode === 'best' ? 'played' : 'best')}
+                        className={`p-2.5 rounded-lg text-left transition cursor-pointer flex items-center justify-between border ${
+                          viewMode === 'best' || viewMode === 'best_preview'
+                            ? 'bg-gradient-to-r from-emerald-600/30 to-[#81b64c]/30 border-[#81b64c] shadow-md shadow-emerald-500/20'
+                            : 'bg-[#81b64c]/10 border-[#81b64c]/30 hover:bg-[#81b64c]/20'
+                        }`}
+                      >
+                        <div>
+                          <span className="text-[10px] text-[#81b64c] uppercase font-bold block flex items-center gap-1">
+                            <Sparkles size={10} /> Best Move
+                          </span>
+                          <span className="font-mono text-base font-black text-white">{bestMoveInfo.san}</span>
+                        </div>
+                        <JudgmentBadgeIcon type="BEST" size={22} />
+                      </button>
+                    </div>
+
+                    {/* Quick Board Toggle Button */}
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button
+                        onClick={() => setViewMode(viewMode === 'best' ? 'played' : 'best')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-sm ${
+                          viewMode === 'best'
+                            ? 'bg-[#81b64c] text-white keep-white'
+                            : 'chess-btn-green keep-white'
+                        }`}
+                      >
+                        <Eye size={14} />
+                        <span>{viewMode === 'best' ? 'Showing Best Move on Board' : 'Show Best Move on Board'}</span>
+                      </button>
+
+                      {viewMode === 'best' && (
+                        <button
+                          onClick={() => setViewMode('best_preview')}
+                          title="Preview position after best move"
+                          className="px-3 py-2 rounded-lg text-xs font-bold bg-[#262421] text-[#81b64c] border border-[#81b64c]/40 hover:bg-[#81b64c]/20 transition cursor-pointer flex items-center gap-1"
+                        >
+                          <span>Play</span>
+                          <Play size={11} className="fill-[#81b64c]" />
+                        </button>
+                      )}
+
+                      {viewMode === 'best_preview' && (
+                        <button
+                          onClick={() => setViewMode('best')}
+                          title="Show Best Move arrow"
+                          className="px-3 py-2 rounded-lg text-xs font-bold bg-[#262421] text-white border border-[#3d3b38] hover:bg-[#302e2b] transition cursor-pointer"
+                        >
+                          Arrow ◀
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Move Details & Engine Eval */}
                 <div className="flex items-baseline justify-between bg-[#1e1c19] p-3 rounded-lg border border-[#3d3b38]">
                   <div>
-                    <span className="text-[10px] text-[#8b8987] uppercase font-bold">Move</span>
+                    <span className="text-[10px] text-[#8b8987] uppercase font-bold">
+                      {viewMode === 'best' ? 'Engine Best Move' : 'Move'}
+                    </span>
                     <div className="text-xl font-black text-white font-mono">
                       {currentMove.moveNumber}. {currentMove.playerColor === 'black' ? '...' : ''}
-                      {currentMove.san}
+                      {viewMode === 'best' ? bestMoveInfo?.san || currentMove.san : currentMove.san}
                     </div>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-[#8b8987] uppercase font-bold">Engine Eval</span>
                     <div className="text-lg font-black text-[#81b64c] font-mono">
-                      {currentMove.evalText}
+                      {viewMode === 'best' && currentMove.bestEvalScore != null
+                        ? (currentMove.bestEvalScore >= 0 ? `+${currentMove.bestEvalScore.toFixed(2)}` : currentMove.bestEvalScore.toFixed(2))
+                        : currentMove.evalText}
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-[#1e1c19] p-3 rounded-lg border border-[#3d3b38] text-xs space-y-2">
                   <div className="flex items-center justify-between text-[#c3c2c1]">
-                    <span className="text-[#8b8987]">Best Alternative:</span>
+                    <span className="text-[#8b8987]">Engine Best Move:</span>
                     <span className="font-mono font-bold text-[#81b64c] bg-[#81b64c]/10 px-2 py-0.5 rounded border border-[#81b64c]/20">
-                      {currentMove.bestMoveUci || '—'}
+                      {bestMoveInfo ? `${bestMoveInfo.san} (${currentMove.bestMoveUci})` : currentMove.bestMoveUci || '—'}
                     </span>
                   </div>
 
@@ -666,7 +908,23 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                   </div>
 
                   <div className="pt-2 border-t border-[#2d2b28] text-[#e2e1e0] leading-relaxed">
-                    {currentMove.explanation}
+                    {bestMoveInfo && currentMove.judgment !== 'BEST' ? (
+                      <>
+                        <span className="font-bold text-white block mb-1">
+                          {currentMove.judgment === 'BLUNDER'
+                            ? 'Critical Blunder!'
+                            : currentMove.judgment === 'MISTAKE'
+                            ? 'Mistake'
+                            : 'Inaccuracy'}
+                        </span>
+                        <span>
+                          {currentMove.san} lost {currentMove.winChanceLoss}% win probability.{' '}
+                          <span className="text-[#81b64c] font-semibold">{bestMoveInfo.san}</span> was the best continuation.
+                        </span>
+                      </>
+                    ) : (
+                      currentMove.explanation
+                    )}
                   </div>
                 </div>
               </div>
