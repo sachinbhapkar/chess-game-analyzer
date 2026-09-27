@@ -146,18 +146,21 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
   const bulletRating = profile?.stats?.chess_bullet?.last?.rating;
 
   return (
-    <div className="bg-[#262421] border border-[#3d3b38] rounded-xl p-5 shadow-xl mb-6 relative">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+    <div className="bg-[#262421]/90 backdrop-blur-xl border border-[#3d3b38]/80 rounded-2xl p-5 shadow-2xl mb-6 relative overflow-hidden">
+      {/* Top subtle ambient glow */}
+      <div className="absolute top-0 right-1/4 w-96 h-20 bg-gradient-to-b from-[#81b64c]/10 to-transparent blur-2xl pointer-events-none" />
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#81b64c]/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c]">
-            <ChessPawn size={22} />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#81b64c]/30 to-emerald-400/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c] shadow-md shadow-emerald-500/10">
+            <ChessPawn size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
               Player Game Review
             </h2>
             <p className="text-xs text-[#a09e9a]">
-              Type any player username to evaluate games and accuracy stats
+              Type any player username to evaluate games, accuracy stats, and blunders
             </p>
           </div>
         </div>
@@ -339,23 +342,23 @@ export const PlayerSearch: React.FC<PlayerSearchProps> = ({ onSearch, profile, l
           </div>
 
           <div className="grid grid-cols-3 gap-2.5">
-            <div className="bg-[#262421] border border-[#3d3b38] px-3.5 py-2 rounded-lg text-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-[#a09e9a] font-semibold">
-                <Clock className="w-3 h-3 text-[#81b64c]" /> Rapid
+            <div className="bg-gradient-to-b from-emerald-500/15 to-[#262421] border border-emerald-500/40 px-3.5 py-2.5 rounded-xl text-center shadow-sm">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-400 font-black uppercase tracking-wider">
+                <Clock className="w-3.5 h-3.5" /> Rapid
               </div>
-              <div className="text-sm font-bold text-white font-mono">{rapidRating || '—'}</div>
+              <div className="text-base font-black text-white font-mono mt-0.5">{rapidRating || '—'}</div>
             </div>
-            <div className="bg-[#262421] border border-[#3d3b38] px-3.5 py-2 rounded-lg text-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-[#a09e9a] font-semibold">
-                <Zap className="w-3 h-3 text-[#f0c15c]" /> Blitz
+            <div className="bg-gradient-to-b from-amber-500/15 to-[#262421] border border-amber-500/40 px-3.5 py-2.5 rounded-xl text-center shadow-sm">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-amber-400 font-black uppercase tracking-wider">
+                <Zap className="w-3.5 h-3.5" /> Blitz
               </div>
-              <div className="text-sm font-bold text-white font-mono">{blitzRating || '—'}</div>
+              <div className="text-base font-black text-white font-mono mt-0.5">{blitzRating || '—'}</div>
             </div>
-            <div className="bg-[#262421] border border-[#3d3b38] px-3.5 py-2 rounded-lg text-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-[#a09e9a] font-semibold">
-                <Shield className="w-3 h-3 text-[#5c8bb0]" /> Bullet
+            <div className="bg-gradient-to-b from-orange-500/15 to-[#262421] border border-orange-500/40 px-3.5 py-2.5 rounded-xl text-center shadow-sm">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-orange-400 font-black uppercase tracking-wider">
+                <Shield className="w-3.5 h-3.5" /> Bullet
               </div>
-              <div className="text-sm font-bold text-white font-mono">{bulletRating || '—'}</div>
+              <div className="text-base font-black text-white font-mono mt-0.5">{bulletRating || '—'}</div>
             </div>
           </div>
         </div>

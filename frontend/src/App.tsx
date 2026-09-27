@@ -133,7 +133,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#302e2b] text-[#e2e1e0] flex flex-col font-sans">
+    <div className="min-h-screen bg-transparent text-[#e2e1e0] flex flex-col font-sans relative selection:bg-[#81b64c] selection:text-white">
       <Navbar
         onOpenPgnModal={() => setIsPgnModalOpen(true)}
         stockfishReady={stockfishReady}
@@ -187,35 +187,56 @@ export function App() {
 
         {/* Empty State / Welcome Screen in Chess.com Card Style */}
         {!profile && !currentReport && (
-          <div className="py-16 text-center max-w-lg mx-auto border border-[#3d3b38] rounded-2xl p-8 bg-[#262421] shadow-xl">
-            <div className="w-14 h-14 rounded-2xl bg-[#81b64c]/20 border border-[#81b64c]/40 text-[#81b64c] mx-auto flex items-center justify-center mb-4 shadow">
-              <ChessKing size={30} />
-            </div>
+          <div className="py-14 text-center max-w-xl mx-auto border border-[#3d3b38]/80 rounded-2xl p-8 bg-[#262421]/90 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+            {/* Top ambient glow */}
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-40 bg-gradient-to-b from-[#81b64c]/20 to-transparent blur-3xl pointer-events-none" />
 
-            <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
-              Chess Game Review
-            </h3>
-            <p className="text-xs text-[#a09e9a] mb-6 leading-relaxed">
-              Search any Chess.com username above to browse your games, review accuracy, detect blunders,
-              and see engine best moves right on the board with your choice of open-source engine.
-            </p>
+            <div className="relative z-10">
+              <div className="w-16 h-16 rounded-2xl p-1 bg-gradient-to-tr from-[#81b64c] to-emerald-400 mx-auto flex items-center justify-center mb-5 shadow-lg shadow-emerald-500/20">
+                <img
+                  src="/icons/royal-king.jpg"
+                  alt="Chess Royal King"
+                  className="w-full h-full object-cover rounded-xl shadow-inner"
+                />
+              </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={() => handlePlayerSearch('sachin-bhapkar')}
-                className="chess-btn-green w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow"
-              >
-                <Sparkles size={14} />
-                <span>Try user: sachin-bhapkar</span>
-              </button>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#81b64c]/15 border border-[#81b64c]/30 text-[#81b64c] text-xs font-black uppercase tracking-wider mb-3">
+                <Sparkles size={12} />
+                <span>Next-Gen Chess Evaluation</span>
+              </div>
 
-              <button
-                onClick={() => handlePlayerSearch('hikaru')}
-                className="chess-btn-secondary w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <ChessKnight size={14} />
-                <span>GM Hikaru Nakamura</span>
-              </button>
+              <h3 className="text-2xl font-black text-white mb-2 tracking-tight">
+                Master Your Chess Games
+              </h3>
+              <p className="text-xs text-[#a09e9a] mb-7 leading-relaxed max-w-md mx-auto">
+                Search any Chess.com player above to browse match archives, evaluate move accuracy with Stockfish or Leela Chess Zero, detect critical blunders, and explore Grandmaster best lines.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => handlePlayerSearch('sachin-bhapkar')}
+                  className="chess-btn-green w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/25"
+                >
+                  <Sparkles size={14} />
+                  <span>Try user: sachin-bhapkar</span>
+                </button>
+
+                <button
+                  onClick={() => handlePlayerSearch('hikaru')}
+                  className="chess-btn-secondary w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ChessKnight size={16} />
+                  <span>GM Hikaru Nakamura</span>
+                </button>
+
+                <button
+                  onClick={() => handlePlayerSearch('magnuscarlsen')}
+                  className="chess-btn-secondary w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ChessKing size={16} />
+                  <span>Magnus Carlsen</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

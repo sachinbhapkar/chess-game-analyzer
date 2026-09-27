@@ -14,7 +14,7 @@ import {
   Award,
   Cpu,
 } from 'lucide-react';
-import { ChessKing, JudgmentBadgeIcon } from './ChessIcons';
+import { JudgmentBadgeIcon } from './ChessIcons';
 import { useTheme } from '../context/ThemeContext';
 import type { GameAnalysisReport, MoveEvaluation, MoveJudgment } from '../types/chess';
 
@@ -243,6 +243,33 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
         return { label: 'Missed Win', color: 'text-[#db4373]', bg: 'bg-[#db4373]/15', border: 'border-[#db4373]/40' };
       case 'BLUNDER':
         return { label: 'Blunder', color: 'text-[#ca3431]', bg: 'bg-[#ca3431]/20', border: 'border-[#ca3431]/50' };
+    }
+  };
+
+  const getVerdictGlow = (judgment?: MoveJudgment) => {
+    if (!judgment) return 'border-[#3d3b38]';
+    switch (judgment) {
+      case 'BRILLIANT':
+        return 'border-[#1baca6] shadow-[0_0_25px_rgba(27,172,166,0.35)]';
+      case 'GREAT':
+        return 'border-[#3b82f6] shadow-[0_0_25px_rgba(59,130,246,0.3)]';
+      case 'BEST':
+        return 'border-[#81b64c] shadow-[0_0_20px_rgba(129,182,76,0.3)]';
+      case 'EXCELLENT':
+      case 'GOOD':
+        return 'border-[#96bc4b]/60 shadow-[0_0_15px_rgba(150,188,75,0.2)]';
+      case 'BOOK':
+        return 'border-[#a88865] shadow-[0_0_15px_rgba(168,136,101,0.25)]';
+      case 'INACCURACY':
+        return 'border-[#f59e0b] shadow-[0_0_20px_rgba(245,158,11,0.3)]';
+      case 'MISTAKE':
+        return 'border-[#ea580c] shadow-[0_0_25px_rgba(234,88,12,0.35)]';
+      case 'MISSED_WIN':
+        return 'border-[#db2777] shadow-[0_0_25px_rgba(219,39,119,0.35)]';
+      case 'BLUNDER':
+        return 'border-[#dc2626] shadow-[0_0_30px_rgba(220,38,38,0.45)]';
+      default:
+        return 'border-[#3d3b38]';
     }
   };
 
@@ -499,58 +526,77 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
           <div className="bg-[#262421] border border-[#3d3b38] rounded-xl p-5 shadow-xl">
             {/* Accuracy Comparison */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-[#1e1c19] border border-[#3d3b38] p-3 rounded-lg text-center">
+              <div className="bg-gradient-to-b from-[#1e1c19] to-[#24221e] border border-emerald-500/25 p-3.5 rounded-xl text-center shadow-lg relative overflow-hidden group">
+                <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-75" />
                 <div className="flex items-center justify-center gap-1.5 text-xs text-[#a09e9a] font-bold mb-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-300 shadow-sm" />
                   <span>White</span>
                 </div>
-                <div className="text-2xl font-black text-white font-mono">{report.whiteAccuracy}%</div>
-                <div className="w-full bg-[#302e2b] h-1.5 rounded-full mt-2 overflow-hidden">
+                <div className="text-2xl font-black text-white font-mono tracking-tight drop-shadow-sm">
+                  {report.whiteAccuracy}%
+                </div>
+                <div className="w-full bg-[#302e2b] h-2 rounded-full mt-2.5 overflow-hidden p-0.5">
                   <div
-                    className="bg-[#81b64c] h-full rounded-full transition-all duration-500"
+                    className="bg-gradient-to-r from-emerald-500 via-[#81b64c] to-lime-400 h-full rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(129,182,76,0.6)]"
                     style={{ width: `${report.whiteAccuracy}%` }}
                   />
                 </div>
               </div>
 
-              <div className="bg-[#1e1c19] border border-[#3d3b38] p-3 rounded-lg text-center">
+              <div className="bg-gradient-to-b from-[#1e1c19] to-[#24221e] border border-sky-500/25 p-3.5 rounded-xl text-center shadow-lg relative overflow-hidden group">
+                <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-sky-400 to-transparent opacity-75" />
                 <div className="flex items-center justify-center gap-1.5 text-xs text-[#a09e9a] font-bold mb-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#1e1c19] border border-[#4a4744]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#181614] border border-slate-600 shadow-sm" />
                   <span>Black</span>
                 </div>
-                <div className="text-2xl font-black text-white font-mono">{report.blackAccuracy}%</div>
-                <div className="w-full bg-[#302e2b] h-1.5 rounded-full mt-2 overflow-hidden">
+                <div className="text-2xl font-black text-white font-mono tracking-tight drop-shadow-sm">
+                  {report.blackAccuracy}%
+                </div>
+                <div className="w-full bg-[#302e2b] h-2 rounded-full mt-2.5 overflow-hidden p-0.5">
                   <div
-                    className="bg-[#81b64c] h-full rounded-full transition-all duration-500"
+                    className="bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 h-full rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(56,189,248,0.6)]"
                     style={{ width: `${report.blackAccuracy}%` }}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Coach Speech Bubble */}
-            <div className="bg-[#1e1c19] border border-[#3d3b38] p-3.5 rounded-lg flex items-start gap-3 text-xs leading-relaxed text-[#c3c2c1]">
-              <div className="w-8 h-8 rounded-full bg-[#81b64c]/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c] shrink-0 mt-0.5">
-                <ChessKing size={16} />
+            {/* Coach Speech Bubble with 3D Royal Avatar */}
+            <div className="bg-[#1e1c19] border border-[#3d3b38] p-3.5 rounded-xl flex items-start gap-3.5 text-xs leading-relaxed text-[#c3c2c1] relative overflow-hidden shadow-inner">
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-[#81b64c]/40 shrink-0 mt-0.5 bg-gradient-to-br from-emerald-600 to-teal-800 p-0.5">
+                <img
+                  src="/icons/royal-king.jpg"
+                  alt="Grandmaster Coach"
+                  className="w-full h-full object-cover rounded-[10px]"
+                />
               </div>
-              <div>
-                <span className="font-bold text-white block mb-0.5">Coach Review</span>
-                <span>{getCoachSummary()}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-bold text-white">Grandmaster Coach</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 bg-[#81b64c]/20 text-[#81b64c] rounded border border-[#81b64c]/30">
+                    AI Review
+                  </span>
+                </div>
+                <span className="text-[#a09e9a] font-medium">{getCoachSummary()}</span>
               </div>
             </div>
           </div>
 
-          {/* Current Move Explanation Card */}
-          <div className="bg-[#262421] border border-[#3d3b38] rounded-xl p-5 shadow-xl">
+          {/* Current Move Explanation Card with Dynamic Verdict Glow */}
+          <div
+            className={`bg-[#262421] border rounded-xl p-5 shadow-xl transition-all duration-300 ${getVerdictGlow(
+              currentMove?.judgment
+            )}`}
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-[#8b8987] uppercase tracking-wider">
                 Move Verdict
               </span>
               {currentMove && (
-                <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type={currentMove.judgment} size={20} />
+                <div className="flex items-center gap-2">
+                  <JudgmentBadgeIcon type={currentMove.judgment} size={22} />
                   <span
-                    className={`text-xs font-bold px-2 py-0.5 rounded border ${
+                    className={`text-xs font-bold px-2.5 py-0.5 rounded-md border shadow-sm ${
                       getVerdictDetails(currentMove.judgment).bg
                     } ${getVerdictDetails(currentMove.judgment).color} ${
                       getVerdictDetails(currentMove.judgment).border
@@ -615,15 +661,15 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
             )}
           </div>
 
-          {/* All Move Classification Counts (Iconic Chess.com Table) */}
+          {/* All Move Classification Counts (Vibrant Chess.com Badged Table) */}
           <div className="bg-[#262421] border border-[#3d3b38] rounded-xl p-4 shadow-xl">
             <h4 className="text-xs font-bold text-[#8b8987] uppercase tracking-wider mb-3">
               Move Classification
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#1baca6]/10 p-2 rounded-lg border border-[#1baca6]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="BRILLIANT" size={16} />
+                  <JudgmentBadgeIcon type="BRILLIANT" size={17} />
                   <span className="text-[11px] font-bold text-[#1baca6]">Brilliant</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -631,9 +677,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#5c8bb0]/10 p-2 rounded-lg border border-[#5c8bb0]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="GREAT" size={16} />
+                  <JudgmentBadgeIcon type="GREAT" size={17} />
                   <span className="text-[11px] font-bold text-[#5c8bb0]">Great</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -641,9 +687,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#81b64c]/10 p-2 rounded-lg border border-[#81b64c]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="BEST" size={16} />
+                  <JudgmentBadgeIcon type="BEST" size={17} />
                   <span className="text-[11px] font-bold text-[#81b64c]">Best</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -651,9 +697,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#96bc4b]/10 p-2 rounded-lg border border-[#96bc4b]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="EXCELLENT" size={16} />
+                  <JudgmentBadgeIcon type="EXCELLENT" size={17} />
                   <span className="text-[11px] font-bold text-[#96bc4b]">Excellent</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -661,9 +707,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#a3b18a]/10 p-2 rounded-lg border border-[#a3b18a]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="GOOD" size={16} />
+                  <JudgmentBadgeIcon type="GOOD" size={17} />
                   <span className="text-[11px] font-bold text-[#a3b18a]">Good</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -671,9 +717,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#a88865]/10 p-2 rounded-lg border border-[#a88865]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="BOOK" size={16} />
+                  <JudgmentBadgeIcon type="BOOK" size={17} />
                   <span className="text-[11px] font-bold text-[#d5a47d]">Book</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -681,9 +727,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#f0c15c]/10 p-2 rounded-lg border border-[#f0c15c]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="INACCURACY" size={16} />
+                  <JudgmentBadgeIcon type="INACCURACY" size={17} />
                   <span className="text-[11px] font-bold text-[#f0c15c]">Inaccuracy</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -691,9 +737,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#e58f2a]/10 p-2 rounded-lg border border-[#e58f2a]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="MISTAKE" size={16} />
+                  <JudgmentBadgeIcon type="MISTAKE" size={17} />
                   <span className="text-[11px] font-bold text-[#e58f2a]">Mistake</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -701,9 +747,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#db4373]/10 p-2 rounded-lg border border-[#db4373]/30 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="MISSED_WIN" size={16} />
+                  <JudgmentBadgeIcon type="MISSED_WIN" size={17} />
                   <span className="text-[11px] font-bold text-[#db4373]">Missed Win</span>
                 </div>
                 <span className="font-mono font-bold text-white">
@@ -711,9 +757,9 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </span>
               </div>
 
-              <div className="bg-[#1e1c19] p-2 rounded-lg border border-[#3d3b38] flex items-center justify-between">
+              <div className="bg-[#1e1c19] hover:bg-[#ca3431]/15 p-2 rounded-lg border border-[#ca3431]/40 flex items-center justify-between transition">
                 <div className="flex items-center gap-1.5">
-                  <JudgmentBadgeIcon type="BLUNDER" size={16} />
+                  <JudgmentBadgeIcon type="BLUNDER" size={17} />
                   <span className="text-[11px] font-bold text-[#ca3431]">Blunder</span>
                 </div>
                 <span className="font-mono font-bold text-white">

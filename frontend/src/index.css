@@ -4,7 +4,7 @@
    THEME CSS VARIABLES (Dark, Black OLED, White)
    ========================================================================== */
 :root, [data-theme="dark"] {
-  --bg-page: #302e2b;
+  --bg-page: #1c1a17;
   --bg-surface: #262421;
   --bg-subcontainer: #1e1c19;
   --bg-elevated: #21201d;
@@ -12,7 +12,7 @@
   --text-main: #e2e1e0;
   --text-secondary: #a09e9a;
   --text-muted: #8b8987;
-  --scrollbar-track: #21201d;
+  --scrollbar-track: #1c1a17;
   --scrollbar-thumb: #454340;
 }
 
@@ -42,6 +42,9 @@
   --scrollbar-thumb: #cbd5e1;
 }
 
+/* ==========================================================================
+   WALLPAPERS & AMBIENT PRODUCTION LIGHTING
+   ========================================================================== */
 @layer base {
   body {
     background-color: var(--bg-page);
@@ -50,8 +53,53 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
+}
+
+/* Default Theme Wallpapers */
+body, [data-theme="dark"] body {
+  background-image: radial-gradient(circle at 50% 0%, rgba(129, 182, 76, 0.16) 0%, transparent 65%),
+                    url('/wallpapers/dark-slate.jpg');
+}
+
+[data-theme="black"] body {
+  background-image: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 65%),
+                    url('/wallpapers/carbon-oled.jpg');
+}
+
+[data-theme="white"] body {
+  background-image: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 70%),
+                    url('/wallpapers/light-studio.jpg');
+}
+
+/* Explicit Wallpaper Overrides */
+[data-wallpaper="slate"] body {
+  background-image: radial-gradient(circle at 50% 0%, rgba(129, 182, 76, 0.18) 0%, transparent 60%),
+                    url('/wallpapers/dark-slate.jpg') !important;
+}
+
+[data-wallpaper="wood"] body {
+  background-image: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.18) 0%, transparent 65%),
+                    url('/wallpapers/walnut-wood.jpg') !important;
+}
+
+[data-wallpaper="carbon"] body {
+  background-image: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.14) 0%, transparent 60%),
+                    url('/wallpapers/carbon-oled.jpg') !important;
+}
+
+[data-wallpaper="studio"] body {
+  background-image: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 70%),
+                    url('/wallpapers/light-studio.jpg') !important;
+}
+
+[data-wallpaper="solid"] body {
+  background-image: none !important;
 }
 
 /* Custom Chess.com scrollbars */
@@ -77,10 +125,12 @@
   color: #ffffff !important;
   font-weight: 700;
   transition: all 0.1s ease;
+  box-shadow: 0 4px 12px rgba(129, 182, 76, 0.25);
 }
 .chess-btn-green:hover:not(:disabled) {
   background-color: #96bc4b;
   color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(129, 182, 76, 0.4);
 }
 .chess-btn-green:active:not(:disabled) {
   transform: translateY(2px);
@@ -103,25 +153,28 @@
   border-bottom-width: 1px;
 }
 
+/* Translucent Glassmorphism Cards */
+.bg-\[\#262421\] {
+  background-color: rgba(38, 36, 33, 0.88) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 /* ==========================================================================
    BLACK THEME (True OLED Pitch Black)
    ========================================================================== */
 [data-theme="black"] {
-  background-color: #000000 !important;
-  color: #f4f4f5 !important;
-}
-
-[data-theme="black"] body {
-  background-color: #000000 !important;
   color: #f4f4f5 !important;
 }
 
 [data-theme="black"] .bg-\[\#302e2b\] {
-  background-color: #000000 !important;
+  background-color: transparent !important;
 }
 
 [data-theme="black"] .bg-\[\#262421\] {
-  background-color: #09090b !important;
+  background-color: rgba(9, 9, 11, 0.9) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 [data-theme="black"] .bg-\[\#1e1c19\] {
@@ -196,22 +249,18 @@
    WHITE THEME (Clean Crisp Light)
    ========================================================================== */
 [data-theme="white"] {
-  background-color: #f1f3f6 !important;
-  color: #1f2328 !important;
-}
-
-[data-theme="white"] body {
-  background-color: #f1f3f6 !important;
   color: #1f2328 !important;
 }
 
 [data-theme="white"] .bg-\[\#302e2b\] {
-  background-color: #f1f3f6 !important;
+  background-color: transparent !important;
 }
 
 [data-theme="white"] .bg-\[\#262421\] {
-  background-color: #ffffff !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.06), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="white"] .bg-\[\#1e1c19\] {
