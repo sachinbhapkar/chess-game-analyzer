@@ -215,24 +215,33 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
             color: 'rgba(129, 182, 76, 0.9)',
           });
         }
-      } else if (currentMove.judgment === 'BLUNDER') {
+      } else {
+        // Move was Blunder, Mistake, Inaccuracy, Missed Win, or Good
+        // 1. Draw the played move arrow (in red or orange)
         if (currentMove.fromSquare && currentMove.toSquare) {
+          const playedColor =
+            currentMove.judgment === 'BLUNDER'
+              ? 'rgba(220, 38, 38, 0.85)' // Red arrow for blunder
+              : currentMove.judgment === 'MISTAKE'
+              ? 'rgba(234, 88, 12, 0.85)' // Orange arrow for mistake
+              : currentMove.judgment === 'INACCURACY' || currentMove.judgment === 'MISSED_WIN'
+              ? 'rgba(245, 158, 11, 0.85)' // Amber arrow
+              : 'rgba(148, 163, 184, 0.7)'; // Slate for other
+
           arrows.push({
             startSquare: currentMove.fromSquare,
             endSquare: currentMove.toSquare,
-            color: 'rgba(220, 38, 38, 0.85)', // Red arrow for blunder
+            color: playedColor,
           });
         }
-      } else if (
-        currentMove.judgment === 'MISTAKE' ||
-        currentMove.judgment === 'INACCURACY' ||
-        currentMove.judgment === 'MISSED_WIN'
-      ) {
-        if (currentMove.fromSquare && currentMove.toSquare) {
+
+        // 2. SUGGESTED MOVE SHOWN DIRECTLY ON THE BOARD:
+        // Always draw the engine recommendation green arrow directly on the board!
+        if (bestMoveInfo) {
           arrows.push({
-            startSquare: currentMove.fromSquare,
-            endSquare: currentMove.toSquare,
-            color: 'rgba(234, 88, 12, 0.85)', // Orange arrow for mistake
+            startSquare: bestMoveInfo.from,
+            endSquare: bestMoveInfo.to,
+            color: 'rgba(129, 182, 76, 0.95)', // Chess.com engine glowing green arrow
           });
         }
       }
@@ -241,20 +250,26 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
     return arrows;
   };
 
-  // Highlight squares for move made (from and to)
+  // Highlight squares for move made (from and to) and suggested move destination
   const getCustomSquareStyles = () => {
     if (!currentMove) return {};
     const styles: Record<string, React.CSSProperties> = {};
 
     if (viewMode === 'best' && bestMoveInfo) {
       styles[bestMoveInfo.from] = { backgroundColor: 'rgba(129, 182, 76, 0.35)' };
-      styles[bestMoveInfo.to] = { backgroundColor: 'rgba(129, 182, 76, 0.55)' };
+      styles[bestMoveInfo.to] = {
+        backgroundColor: 'rgba(129, 182, 76, 0.55)',
+        boxShadow: 'inset 0 0 0 2px rgba(129, 182, 76, 0.95)',
+      };
       return styles;
     }
 
     if (viewMode === 'best_preview' && bestMoveInfo) {
       styles[bestMoveInfo.from] = { backgroundColor: 'rgba(129, 182, 76, 0.25)' };
-      styles[bestMoveInfo.to] = { backgroundColor: 'rgba(129, 182, 76, 0.5)' };
+      styles[bestMoveInfo.to] = {
+        backgroundColor: 'rgba(129, 182, 76, 0.5)',
+        boxShadow: 'inset 0 0 0 2px rgba(129, 182, 76, 0.95)',
+      };
       return styles;
     }
 
@@ -273,6 +288,24 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
     if (currentMove.toSquare) {
       styles[currentMove.toSquare] = { backgroundColor: tintColor };
     }
+
+    // DIRECTLY HIGHLIGHT SUGGESTED MOVE DESTINATION ON BOARD
+    if (
+      bestMoveInfo &&
+      currentMove.judgment !== 'BEST' &&
+      currentMove.judgment !== 'BRILLIANT'
+    ) {
+      styles[bestMoveInfo.to] = {
+        backgroundColor: 'rgba(129, 182, 76, 0.35)',
+        boxShadow: 'inset 0 0 0 2px rgba(129, 182, 76, 0.9)',
+      };
+      if (bestMoveInfo.from !== currentMove.fromSquare && bestMoveInfo.from !== currentMove.toSquare) {
+        styles[bestMoveInfo.from] = {
+          backgroundColor: 'rgba(129, 182, 76, 0.2)',
+        };
+      }
+    }
+
     return styles;
   };
 
@@ -377,6 +410,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
       : currentMove?.toSquare;
 
   const badgePos = badgeTargetSquare ? getBadgePosition(badgeTargetSquare) : null;
+  const bestBadgePos = bestMoveInfo ? getBadgePosition(bestMoveInfo.to) : null;
 
   const activeBadgeType: MoveJudgment =
     viewMode === 'best' || viewMode === 'best_preview'
@@ -495,16 +529,16 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
               </div>
             </div>
 
-            {/* Best Move Interactive Banner */}
+            {/* Best Move State Indicator Banner */}
             {viewMode === 'best' && bestMoveInfo && (
-              <div className="bg-emerald-500/15 border border-emerald-500/40 px-3.5 py-2 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-150 shadow-md">
+              <div className="bg-emerald-500/15 border border-emerald-500/40 px-3.5 py-1.5 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-150 shadow-md">
                 <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                  <Sparkles size={15} />
+                  <Sparkles size={14} />
                   <span>
-                    Showing Best Move: <strong className="text-white font-mono text-sm">{bestMoveInfo.san}</strong> (instead of {currentMove?.san})
+                    Board shows pre-mistake position with Suggested Move: <strong className="text-white font-mono text-sm">{bestMoveInfo.san}</strong>
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setViewMode('best_preview')}
                     className="px-2.5 py-1 rounded-lg bg-[#81b64c] text-white font-bold hover:bg-[#96bc4b] transition cursor-pointer text-[11px] keep-white shadow-sm flex items-center gap-1"
@@ -523,14 +557,14 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
             )}
 
             {viewMode === 'best_preview' && bestMoveInfo && (
-              <div className="bg-[#81b64c]/20 border border-[#81b64c]/50 px-3.5 py-2 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-150 shadow-md">
+              <div className="bg-[#81b64c]/20 border border-[#81b64c]/50 px-3.5 py-1.5 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-150 shadow-md">
                 <div className="flex items-center gap-2 text-white font-bold">
-                  <Check size={15} className="text-[#81b64c]" />
+                  <Check size={14} className="text-[#81b64c]" />
                   <span>
-                    Position after Best Move: <strong className="text-[#81b64c] font-mono text-sm">{bestMoveInfo.san}</strong>
+                    Position after Suggested Move: <strong className="text-[#81b64c] font-mono text-sm">{bestMoveInfo.san}</strong>
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setViewMode('best')}
                     className="px-2.5 py-1 rounded-lg bg-[#1e1c19] text-white border border-[#3d3b38] hover:bg-[#2c2a27] transition cursor-pointer text-[11px]"
@@ -597,8 +631,94 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                     </div>
                   </div>
                 )}
+
+                {/* Floating BEST Move Badge Directly on the Suggested Square on the Board */}
+                {bestBadgePos &&
+                  viewMode === 'played' &&
+                  bestMoveInfo &&
+                  currentMove &&
+                  currentMove.judgment !== 'BEST' &&
+                  currentMove.judgment !== 'BRILLIANT' &&
+                  bestMoveInfo.to !== currentMove.toSquare && (
+                    <div
+                      className="absolute pointer-events-none z-20 flex items-start justify-end p-1 transition-all duration-150 ease-out"
+                      style={{
+                        left: bestBadgePos.left,
+                        top: bestBadgePos.top,
+                        width: '12.5%',
+                        height: '12.5%',
+                      }}
+                    >
+                      <div className="transform -translate-y-1 translate-x-1 filter drop-shadow-xl scale-110 opacity-95 animate-in zoom-in-75 duration-150">
+                        <JudgmentBadgeIcon type="BEST" size={26} />
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
+
+            {/* On-Board Suggested Move Action Strip (Directly Below Chessboard) */}
+            {bestMoveInfo && currentMove && currentMove.judgment !== 'BEST' && currentMove.judgment !== 'BRILLIANT' && (
+              <div className="bg-[#1e1c19] border border-[#81b64c]/40 rounded-xl p-2.5 shadow-lg flex items-center justify-between gap-3 animate-in fade-in duration-150">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-[#81b64c]/20 border border-[#81b64c]/40 flex items-center justify-center text-[#81b64c] shrink-0">
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-[#81b64c] uppercase tracking-wide">
+                        Suggested Move:
+                      </span>
+                      <span className="font-mono font-black text-white text-base bg-[#81b64c]/25 border border-[#81b64c]/50 px-2 py-0.5 rounded shadow-sm">
+                        {bestMoveInfo.san}
+                      </span>
+                      <JudgmentBadgeIcon type="BEST" size={18} />
+                    </div>
+                    <p className="text-[11px] text-[#a09e9a] truncate">
+                      Shown on board with <span className="text-[#81b64c] font-semibold">green arrow</span> (played {currentMove.san})
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setViewMode(viewMode === 'best' ? 'played' : 'best')}
+                    title="View board position before mistake with suggested move"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                      viewMode === 'best'
+                        ? 'bg-[#81b64c] text-white keep-white'
+                        : 'bg-[#262421] text-white border border-[#3d3b38] hover:border-[#81b64c]'
+                    }`}
+                  >
+                    <Eye size={13} />
+                    <span>{viewMode === 'best' ? 'Best View' : 'Focus Best'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setViewMode(viewMode === 'best_preview' ? 'played' : 'best_preview')}
+                    title="Play suggested move on board to see result"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-sm ${
+                      viewMode === 'best_preview'
+                        ? 'bg-[#81b64c] text-white keep-white'
+                        : 'bg-[#262421] text-[#81b64c] border border-[#81b64c]/40 hover:bg-[#81b64c]/20'
+                    }`}
+                  >
+                    <Play size={11} className="fill-current" />
+                    <span>Play ▶</span>
+                  </button>
+
+                  {viewMode !== 'played' && (
+                    <button
+                      onClick={() => setViewMode('played')}
+                      title="Return to played move"
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#262421] text-[#a09e9a] hover:text-white border border-[#3d3b38] transition cursor-pointer"
+                    >
+                      Played ↩
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Bottom Player Banner (User) */}
             <div className="bg-[#262421] border border-[#3d3b38] px-3.5 py-2 rounded-lg flex items-center justify-between text-xs">
@@ -658,7 +778,22 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                 </button>
               </div>
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
+                {bestMoveInfo && currentMove && currentMove.judgment !== 'BEST' && currentMove.judgment !== 'BRILLIANT' && (
+                  <button
+                    onClick={() => setViewMode(viewMode === 'best' ? 'played' : 'best')}
+                    title="Toggle suggested best move on board"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                      viewMode === 'best'
+                        ? 'bg-[#81b64c] text-white keep-white'
+                        : 'bg-[#1e1c19] text-[#81b64c] border border-[#81b64c]/40 hover:bg-[#81b64c]/20'
+                    }`}
+                  >
+                    <Sparkles size={13} />
+                    <span>Best: {bestMoveInfo.san}</span>
+                  </button>
+                )}
+
                 <button
                   onClick={() => setIsPlaying((p) => !p)}
                   title="Auto Play (Space)"
@@ -817,7 +952,7 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                       >
                         <div>
                           <span className="text-[10px] text-[#81b64c] uppercase font-bold block flex items-center gap-1">
-                            <Sparkles size={10} /> Best Move
+                            <Sparkles size={10} /> Suggested
                           </span>
                           <span className="font-mono text-base font-black text-white">{bestMoveInfo.san}</span>
                         </div>
@@ -825,40 +960,11 @@ export const AnalysisWorkbench: React.FC<AnalysisWorkbenchProps> = ({ report, on
                       </button>
                     </div>
 
-                    {/* Quick Board Toggle Button */}
-                    <div className="flex items-center gap-2 pt-0.5">
-                      <button
-                        onClick={() => setViewMode(viewMode === 'best' ? 'played' : 'best')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-sm ${
-                          viewMode === 'best'
-                            ? 'bg-[#81b64c] text-white keep-white'
-                            : 'chess-btn-green keep-white'
-                        }`}
-                      >
-                        <Eye size={14} />
-                        <span>{viewMode === 'best' ? 'Showing Best Move on Board' : 'Show Best Move on Board'}</span>
-                      </button>
-
-                      {viewMode === 'best' && (
-                        <button
-                          onClick={() => setViewMode('best_preview')}
-                          title="Preview position after best move"
-                          className="px-3 py-2 rounded-lg text-xs font-bold bg-[#262421] text-[#81b64c] border border-[#81b64c]/40 hover:bg-[#81b64c]/20 transition cursor-pointer flex items-center gap-1"
-                        >
-                          <span>Play</span>
-                          <Play size={11} className="fill-[#81b64c]" />
-                        </button>
-                      )}
-
-                      {viewMode === 'best_preview' && (
-                        <button
-                          onClick={() => setViewMode('best')}
-                          title="Show Best Move arrow"
-                          className="px-3 py-2 rounded-lg text-xs font-bold bg-[#262421] text-white border border-[#3d3b38] hover:bg-[#302e2b] transition cursor-pointer"
-                        >
-                          Arrow ◀
-                        </button>
-                      )}
+                    <div className="flex items-center justify-between px-1 text-[11px] text-[#81b64c]">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-[#81b64c] inline-block animate-pulse" />
+                        Suggested move arrow is drawn directly on the board
+                      </span>
                     </div>
                   </div>
                 )}
